@@ -22,6 +22,12 @@
 	</properties>
 
 	<dependencies>
+		<!-- Flatlaf Theme -->
+		<dependency>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf</artifactId>
+			<version>3.7.1</version>
+		</dependency>
 
 		<!-- Spring Data JPA -->
 		<dependency>

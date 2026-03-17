@@ -1,5 +1,6 @@
 package com.afonso.gestaoSerralharia;
 
+import com.afonso.gestaoSerralharia.GUI.GUIDesktop;
 import com.afonso.gestaoSerralharia.models.*;
 import com.afonso.gestaoSerralharia.services.*;
 import jakarta.transaction.Transactional;
@@ -7,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+
+import javax.swing.*;
 
 /**
  * Aplicação de Gestão de Serralharia
@@ -26,7 +30,14 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
 	private final FaturaService faturaService;
 
 	public static void main(String[] args) {
-		SpringApplication.run(GestaoSerralhariaApplication.class, args);
+		SpringApplicationBuilder builder = new SpringApplicationBuilder(GestaoSerralhariaApplication.class);
+
+		// Isto desativa o modo "headless" que causa a Exception
+		builder.headless(false);
+		builder.run(args);
+
+		// Inicia a GUI
+		SwingUtilities.invokeLater(GUIDesktop::new);
 	}
 
 	private void separador(String titulo) {

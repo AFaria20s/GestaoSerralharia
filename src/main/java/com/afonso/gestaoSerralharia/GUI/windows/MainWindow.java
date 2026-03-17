@@ -11,9 +11,5 @@ public class MainWindow extends JFrame {
 
     public void init() {
         setVisible(true);
-
-        JLabel label = new JLabel();
     }
-
-
 }
