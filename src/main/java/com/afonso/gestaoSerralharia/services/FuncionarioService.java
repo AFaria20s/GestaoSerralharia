@@ -4,6 +4,7 @@ import com.afonso.gestaoSerralharia.models.Cargo;
 import com.afonso.gestaoSerralharia.models.Funcionario;
 import com.afonso.gestaoSerralharia.repositories.FuncionarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
 public class FuncionarioService {
 
     private final FuncionarioRepository funcionarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public List<Funcionario> listarTodos() {
         return funcionarioRepository.findAll();
@@ -37,13 +39,22 @@ public class FuncionarioService {
 
     public Funcionario guardar(Funcionario funcionario) {
         if (funcionario.getNome() == null || funcionario.getNome().isBlank())
-            throw new IllegalArgumentException("Nome do funcionário é obrigatório");
+            throw new IllegalArgumentException("Nome é obrigatório");
         if (funcionario.getEmail() == null || !funcionario.getEmail().contains("@"))
             throw new IllegalArgumentException("Email inválido");
         Funcionario existente = funcionarioRepository.findByEmail(funcionario.getEmail());
         if (existente != null && !existente.getId().equals(funcionario.getId()))
-            throw new IllegalArgumentException("Já existe um funcionário com o email " + funcionario.getEmail());
+            throw new IllegalArgumentException("Já existe um funcionário com este email");
+        if (!funcionario.getPassword().startsWith("$2a$"))
+            funcionario.setPassword(passwordEncoder.encode(funcionario.getPassword()));
         return funcionarioRepository.save(funcionario);
+    }
+
+    public Funcionario autenticar(String email, String passwordPlana) {
+        Funcionario func = funcionarioRepository.findByEmail(email);
+        if (func == null || !passwordEncoder.matches(passwordPlana, func.getPassword()))
+            throw new RuntimeException("Credenciais inválidas");
+        return func;
     }
 
     public void eliminar(Integer id) {
