@@ -15,17 +15,12 @@ public class DonoService {
     private final DonoRepository donoRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<Dono> listarTodos() {
-        return donoRepository.findAll();
-    }
+    public List<Dono> listarTodos()          { return donoRepository.findAll(); }
+    public Dono buscarPorEmail(String email)  { return donoRepository.findByEmail(email); }
 
     public Dono buscarPorId(Integer id) {
         return donoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dono não encontrado: " + id));
-    }
-
-    public Dono buscarPorEmail(String email) {
-        return donoRepository.findByEmail(email);
     }
 
     public Dono guardar(Dono dono) {
@@ -33,7 +28,7 @@ public class DonoService {
             throw new IllegalArgumentException("Nome é obrigatório");
         if (dono.getEmail() == null || !dono.getEmail().contains("@"))
             throw new IllegalArgumentException("Email inválido");
-        if (donoRepository.findByEmail(dono.getEmail()) != null && dono.getId() == null)
+        if (dono.getId() == null && donoRepository.findByEmail(dono.getEmail()) != null)
             throw new IllegalArgumentException("Já existe uma conta com este email");
         if (!dono.getPassword().startsWith("$2a$"))
             dono.setPassword(passwordEncoder.encode(dono.getPassword()));
@@ -42,12 +37,10 @@ public class DonoService {
 
     public Dono autenticar(String email, String passwordPlana) {
         Dono dono = donoRepository.findByEmail(email);
-        if (dono == null || !passwordEncoder.matches(passwordPlana, dono.getPassword()))
-            throw new RuntimeException("Credenciais inválidas");
-        return dono;
+        if (dono != null && passwordEncoder.matches(passwordPlana, dono.getPassword()))
+            return dono;
+        return null;
     }
 
-    public void eliminar(Integer id) {
-        donoRepository.deleteById(id);
-    }
+    public void eliminar(Integer id) { donoRepository.deleteById(id); }
 }
