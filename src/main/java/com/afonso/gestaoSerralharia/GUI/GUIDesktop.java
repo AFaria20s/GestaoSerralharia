@@ -3,16 +3,30 @@ package com.afonso.gestaoSerralharia.GUI;
 import com.afonso.gestaoSerralharia.GUI.themes.ThemeType;
 import com.afonso.gestaoSerralharia.GUI.utils.AppConfig;
 import com.afonso.gestaoSerralharia.GUI.windows.AppFrame;
-import com.afonso.gestaoSerralharia.services.AuthService;
+import com.afonso.gestaoSerralharia.services.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
 
 public class GUIDesktop {
 
-    public GUIDesktop(AuthService authService) {
+    public GUIDesktop(AuthService authService,
+                      ObraService obraService,
+                      TarefaService tarefaService,
+                      FaturaService faturaService,
+                      ProblemaService problemaService,
+                      ClienteService clienteService,
+                      FuncionarioService funcionarioService,
+                      CargoService cargoService,
+                      EstadoobraService estadoobraService,
+                      CodpostalService codpostalService,
+                      VisitaService visitaService,
+                      OrcamentoService orcamentoService
+    ) {
         setupLookAndFeel();
-        new AppFrame(authService);
+        new AppFrame(authService, obraService, tarefaService, faturaService,
+                problemaService, clienteService, funcionarioService, cargoService,
+                estadoobraService, codpostalService, visitaService, orcamentoService);
     }
 
     private void setupLookAndFeel() {

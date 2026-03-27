@@ -14,7 +14,7 @@ public class Funcionario {
     @Column(name = "id_funcionario", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_cargo")
     private Cargo idCargo;
 
@@ -26,6 +26,5 @@ public class Funcionario {
 
     @Column(name = "password", nullable = false)
     private String password;
-
 
 }

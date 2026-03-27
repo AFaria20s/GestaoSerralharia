@@ -4,7 +4,7 @@ import com.afonso.gestaoSerralharia.GUI.UIConstants;
 import com.afonso.gestaoSerralharia.GUI.panels.admin.*;
 import com.afonso.gestaoSerralharia.GUI.panels.func.*;
 import com.afonso.gestaoSerralharia.config.SessionManager;
-import com.afonso.gestaoSerralharia.services.AuthService;
+import com.afonso.gestaoSerralharia.services.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -39,8 +39,45 @@ public class AppFrame extends JFrame {
     private JPasswordField loginPasswordField;
     private JLabel         loginErroLabel;
 
-    public AppFrame(AuthService authService) {
-        this.authService = authService;
+    private FuncionarioService funcionarioService;
+    private CargoService cargoService;
+
+    private final ObraService        obraService;
+    private final TarefaService      tarefaService;
+    private final FaturaService      faturaService;
+    private final ProblemaService problemaService;
+    private final ClienteService clienteService;
+    private final EstadoobraService estadoObraService;
+    private final CodpostalService codPostalService;
+    private final VisitaService visitaService;
+    private final OrcamentoService orcamentoService;
+
+    public AppFrame(AuthService authService,
+                    ObraService obraService,
+                    TarefaService tarefaService,
+                    FaturaService faturaService,
+                    ProblemaService problemaService,
+                    ClienteService clienteService,
+                    FuncionarioService funcionarioService,
+                    CargoService cargoService,
+                    EstadoobraService estadoObraService,
+                    CodpostalService codPostalService,
+                    VisitaService visitaService,
+                    OrcamentoService orcamentoService
+    ) {
+        this.authService        = authService;
+        this.obraService        = obraService;
+        this.tarefaService      = tarefaService;
+        this.faturaService      = faturaService;
+        this.problemaService    = problemaService;
+        this.clienteService     = clienteService;
+        this.funcionarioService = funcionarioService;
+        this.cargoService       = cargoService;
+        this.estadoObraService  = estadoObraService;
+        this.codPostalService = codPostalService;
+        this.visitaService = visitaService;
+        this.orcamentoService = orcamentoService;
+
 
         setTitle("Serralharia");
         setMinimumSize(new Dimension(UIConstants.APP_MIN_WIDTH, UIConstants.APP_MIN_HEIGHT));
@@ -370,11 +407,15 @@ public class AppFrame extends JFrame {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void registerAdminPanels() {
-        addAdminPanel("dashboard",    new DashboardPanel());
-        addAdminPanel("obras",        new ObrasPanel());
+        addAdminPanel("dashboard",    new DashboardPanel(
+                obraService, tarefaService, faturaService,
+                problemaService, clienteService, funcionarioService));
+        addAdminPanel("obras",        new ObrasPanel(
+                obraService, clienteService, estadoObraService,
+                visitaService, orcamentoService, codPostalService));
         addAdminPanel("visitas",      new VisitasPanel());
         addAdminPanel("orcamentos",   new OrcamentosPanel());
-        addAdminPanel("funcionarios", new FuncionariosPanel());
+        addAdminPanel("funcionarios", new FuncionariosPanel(funcionarioService, cargoService));
         addAdminPanel("equipas",      new EquipasPanel());
         addAdminPanel("tarefas",      new TarefasAdminPanel());
         addAdminPanel("clientes",     new ClientesPanel());

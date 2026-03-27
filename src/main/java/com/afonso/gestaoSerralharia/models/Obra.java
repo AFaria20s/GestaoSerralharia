@@ -19,12 +19,12 @@ public class Obra {
     @Column(name = "id_obra", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_cliente")
     private Cliente idCliente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @ColumnDefault("1")
     @JoinColumn(name = "id_estado_obra")
     private Estadoobra idEstadoObra;
@@ -45,7 +45,7 @@ public class Obra {
     @Column(name = "localidade", nullable = false, length = 100)
     private String localidade;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "id_codpostal", nullable = false)
     private Codpostal idCodpostal;
 

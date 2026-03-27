@@ -1,7 +1,7 @@
 package com.afonso.gestaoSerralharia;
 
 import com.afonso.gestaoSerralharia.GUI.GUIDesktop;
-import com.afonso.gestaoSerralharia.services.AuthService;
+import com.afonso.gestaoSerralharia.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,7 +13,18 @@ import javax.swing.*;
 @RequiredArgsConstructor
 public class GestaoSerralhariaApplication implements CommandLineRunner {
 
+    private final ObraService        obraService;
+    private final TarefaService      tarefaService;
+    private final FaturaService      faturaService;
+    private final ProblemaService problemaService;
+    private final ClienteService clienteService;
+    private final FuncionarioService funcionarioService;
+    private final CargoService       cargoService;
     private final AuthService authService;
+    private final EstadoobraService estadoobraService;
+    private final CodpostalService codpostalService;
+    private final VisitaService visitaService;
+    private final OrcamentoService orcamentoService;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GestaoSerralhariaApplication.class)
@@ -23,6 +34,10 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
 
     @Override
     public void run(String[] args) {
-        SwingUtilities.invokeLater(() -> new GUIDesktop(authService));
+        SwingUtilities.invokeLater(() ->
+                new GUIDesktop(authService, obraService, tarefaService, faturaService,
+                        problemaService, clienteService, funcionarioService, cargoService,
+                        estadoobraService, codpostalService, visitaService, orcamentoService
+                ));
     }
 }
