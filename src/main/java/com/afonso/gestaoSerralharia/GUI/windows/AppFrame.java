@@ -5,6 +5,7 @@ import com.afonso.gestaoSerralharia.GUI.panels.admin.*;
 import com.afonso.gestaoSerralharia.GUI.panels.func.*;
 import com.afonso.gestaoSerralharia.config.SessionManager;
 import com.afonso.gestaoSerralharia.services.*;
+import com.afonso.gestaoSerralharia.services.GravidadeproblemaService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -54,6 +55,9 @@ public class AppFrame extends JFrame {
     private final LinhaorcamentoService    linhaorcamentoService;
     private final TaxaivaService           taxaivaService;
     private final TipolinhaorcamentoService tipolinhaorcamentoService;
+    private final GravidadeproblemaService gravidadeService;
+    private final EquipafuncionarioService equipafuncionarioService;
+    private final EquipaService equipaService;
 
     public AppFrame(AuthService authService,
                     ObraService obraService,
@@ -69,23 +73,29 @@ public class AppFrame extends JFrame {
                     OrcamentoService orcamentoService,
                     LinhaorcamentoService linhaorcamentoService,
                     TaxaivaService taxaivaService,
-                    TipolinhaorcamentoService tipolinhaorcamentoService
+                    TipolinhaorcamentoService tipolinhaorcamentoService,
+                    GravidadeproblemaService gravidadeService,
+                    EquipafuncionarioService equipafuncionarioService,
+                    EquipaService equipaService
     ) {
-        this.authService        = authService;
-        this.obraService        = obraService;
-        this.tarefaService      = tarefaService;
-        this.faturaService      = faturaService;
-        this.problemaService    = problemaService;
-        this.clienteService     = clienteService;
-        this.funcionarioService = funcionarioService;
-        this.cargoService       = cargoService;
-        this.estadoObraService  = estadoObraService;
-        this.codPostalService = codPostalService;
-        this.visitaService = visitaService;
-        this.orcamentoService = orcamentoService;
-        this.linhaorcamentoService = linhaorcamentoService;
-        this.taxaivaService = taxaivaService;
-        this.tipolinhaorcamentoService = tipolinhaorcamentoService;
+        this.authService                = authService;
+        this.obraService                = obraService;
+        this.tarefaService              = tarefaService;
+        this.faturaService              = faturaService;
+        this.problemaService            = problemaService;
+        this.clienteService             = clienteService;
+        this.funcionarioService         = funcionarioService;
+        this.cargoService               = cargoService;
+        this.estadoObraService          = estadoObraService;
+        this.codPostalService           = codPostalService;
+        this.visitaService              = visitaService;
+        this.orcamentoService           = orcamentoService;
+        this.linhaorcamentoService      = linhaorcamentoService;
+        this.taxaivaService             = taxaivaService;
+        this.tipolinhaorcamentoService  = tipolinhaorcamentoService;
+        this.gravidadeService           = gravidadeService;
+        this.equipafuncionarioService   = equipafuncionarioService;
+        this.equipaService              = equipaService;
 
 
         setTitle("Serralharia");
@@ -273,6 +283,7 @@ public class AppFrame extends JFrame {
             sb.add(sidebarSection("OBRAS"));
             sb.add(sidebarBtn("obras",        "Obras",        isAdmin));
             sb.add(sidebarBtn("visitas",      "Visitas",      isAdmin));
+            sb.add(sidebarBtn("problemas",    "Problemas",    isAdmin));
             sb.add(sidebarBtn("orcamentos",   "Orçamentos",   isAdmin));
             sb.add(sidebarSection("EQUIPA"));
             sb.add(sidebarBtn("funcionarios", "Funcionários", isAdmin));
@@ -421,8 +432,11 @@ public class AppFrame extends JFrame {
                 problemaService, clienteService, funcionarioService));
         addAdminPanel("obras",        new ObrasPanel(
                 obraService, clienteService, estadoObraService,
-                visitaService, orcamentoService, codPostalService));
+                visitaService, orcamentoService, codPostalService,
+                problemaService, gravidadeService));
         addAdminPanel("visitas",      new VisitasPanel(visitaService, obraService));
+        addAdminPanel("problemas",    new ProblemasPanel(
+                problemaService, obraService, gravidadeService, tarefaService));
         addAdminPanel("orcamentos", new OrcamentosPanel(
                 orcamentoService,
                 linhaorcamentoService,
@@ -430,7 +444,9 @@ public class AppFrame extends JFrame {
                 taxaivaService,
                 tipolinhaorcamentoService));
         addAdminPanel("funcionarios", new FuncionariosPanel(funcionarioService, cargoService));
-        addAdminPanel("equipas",      new EquipasPanel());
+        addAdminPanel("equipas",      new EquipasPanel(
+                equipaService, equipafuncionarioService,
+                obraService, funcionarioService, tarefaService));
         addAdminPanel("tarefas",      new TarefasAdminPanel());
         addAdminPanel("clientes",     new ClientesPanel());
         addAdminPanel("stock",        new StockPanel());

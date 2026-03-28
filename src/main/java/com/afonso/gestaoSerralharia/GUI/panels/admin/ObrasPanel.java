@@ -4,6 +4,9 @@ import com.afonso.gestaoSerralharia.GUI.UIConstants;
 import com.afonso.gestaoSerralharia.GUI.panels.BasePanel;
 import com.afonso.gestaoSerralharia.models.*;
 import com.afonso.gestaoSerralharia.services.*;
+import com.afonso.gestaoSerralharia.models.Problema;
+import com.afonso.gestaoSerralharia.services.GravidadeproblemaService;
+import java.time.ZoneId;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -18,28 +21,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Painel de Gestão de Obras — RF02, RF07, RF08, RF22
- *
- * Funcionalidades:
- *  • Listar obras com filtro por estado e pesquisa por descrição/cliente  (RF22)
- *  • Criar nova obra associada a cliente                                   (RF02)
- *  • Ver detalhe da obra (info, endereço, datas)
- *  • Alterar estado da obra                                                (RF07)
- *  • Marcar obra como concluída                                            (RF08)
- *  • Arquivar / Cancelar obra
- *  • Agendar visita à obra                                                 (RF03)
- *  • Ver histórico de obras de um cliente                                  (RF21)
- */
 public class ObrasPanel extends BasePanel {
 
     // ── Serviços ──────────────────────────────────────────────────────────
-    private final ObraService         obraService;
-    private final ClienteService      clienteService;
-    private final EstadoobraService   estadoobraService;
-    private final VisitaService       visitaService;
-    private final OrcamentoService    orcamentoService;
-    private final CodpostalService    codpostalService;
+    private final ObraService              obraService;
+    private final ClienteService           clienteService;
+    private final EstadoobraService        estadoobraService;
+    private final VisitaService            visitaService;
+    private final OrcamentoService         orcamentoService;
+    private final CodpostalService         codpostalService;
+    private final ProblemaService          problemaService;
+    private final GravidadeproblemaService gravidadeService;
 
     // ── Componentes da tabela ──────────────────────────────────────────────
     private DefaultTableModel modeloTabela;
@@ -57,13 +49,16 @@ public class ObrasPanel extends BasePanel {
 
     public ObrasPanel(ObraService obraService, ClienteService clienteService,
                       EstadoobraService estadoobraService, VisitaService visitaService,
-                      OrcamentoService orcamentoService, CodpostalService codpostalService) {
+                      OrcamentoService orcamentoService, CodpostalService codpostalService,
+                      ProblemaService problemaService, GravidadeproblemaService gravidadeService) {
         this.obraService       = obraService;
         this.clienteService    = clienteService;
         this.estadoobraService = estadoobraService;
         this.visitaService     = visitaService;
         this.orcamentoService  = orcamentoService;
         this.codpostalService  = codpostalService;
+        this.problemaService   = problemaService;
+        this.gravidadeService  = gravidadeService;
 
         add(buildHeader(), BorderLayout.NORTH);
         add(buildCorpo(), BorderLayout.CENTER);
@@ -327,15 +322,14 @@ public class ObrasPanel extends BasePanel {
         JTextField tfNPorta     = new JTextField();
         JTextField tfLocalidade = new JTextField();
 
-        JComboBox<Codpostal> cbCodpostal = new JComboBox<>();
-        codpostalService.listarTodos().forEach(cbCodpostal::addItem);
-        cbCodpostal.setRenderer(new DefaultListCellRenderer() {
-            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
-                super.getListCellRendererComponent(l, v, i, s, f);
-                if (v instanceof Codpostal) setText(((Codpostal) v).getCodpostal());
-                return this;
-            }
-        });
+        JComboBox<String> cbCodpostal = new JComboBox<>();
+        cbCodpostal.setEditable(true);
+        codpostalService.listarTodos().forEach(cp -> cbCodpostal.addItem(cp.getCodpostal()));
+
+        // Hint sob o campo
+        JLabel lblCpDica = new JLabel("  Se o código postal não existir, é criado automaticamente.");
+        lblCpDica.setFont(lblCpDica.getFont().deriveFont(UIConstants.FONT_SMALL));
+        lblCpDica.setForeground(UIManager.getColor("Label.disabledForeground"));
 
         int r = 0;
         addFormRow(form, gbc, r++, "Cliente *",     cbCliente);
@@ -344,6 +338,11 @@ public class ObrasPanel extends BasePanel {
         addFormRow(form, gbc, r++, "Nº Porta *",    tfNPorta);
         addFormRow(form, gbc, r++, "Localidade *",  tfLocalidade);
         addFormRow(form, gbc, r++, "Cód. Postal *", cbCodpostal);
+        // linha de dica (sem label à esquerda)
+        GridBagConstraints gbcDica = new GridBagConstraints();
+        gbcDica.gridx = 1; gbcDica.gridy = r * 2; gbcDica.fill = GridBagConstraints.HORIZONTAL;
+        gbcDica.insets = new Insets(0, 4, 8, 0);
+        form.add(lblCpDica, gbcDica);
 
         // Botões
         JButton btnGuardar  = buildButton("Guardar");
@@ -363,8 +362,21 @@ public class ObrasPanel extends BasePanel {
                     throw new IllegalArgumentException("O número de porta é obrigatório.");
                 if (tfLocalidade.getText().isBlank())
                     throw new IllegalArgumentException("A localidade é obrigatória.");
-                if (cbCodpostal.getSelectedItem() == null)
-                    throw new IllegalArgumentException("Seleccione um código postal.");
+
+                Object cpSel = cbCodpostal.getSelectedItem();
+                String cpTexto = cpSel != null ? cpSel.toString().trim() : "";
+                if (cpTexto.isBlank())
+                    throw new IllegalArgumentException("O código postal é obrigatório.");
+
+                // Resolver ou criar o Codpostal (correspondência exata, case-insensitive)
+                Codpostal codpostal = codpostalService.listarTodos().stream()
+                        .filter(cp -> cp.getCodpostal().equalsIgnoreCase(cpTexto))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            Codpostal novo = new Codpostal();
+                            novo.setCodpostal(cpTexto);
+                            return codpostalService.guardar(novo);
+                        });
 
                 Obra nova = new Obra();
                 nova.setIdCliente((Cliente) cbCliente.getSelectedItem());
@@ -372,7 +384,7 @@ public class ObrasPanel extends BasePanel {
                 nova.setRua(tfRua.getText().trim());
                 nova.setNporta(tfNPorta.getText().trim());
                 nova.setLocalidade(tfLocalidade.getText().trim());
-                nova.setIdCodpostal((Codpostal) cbCodpostal.getSelectedItem());
+                nova.setIdCodpostal(codpostal);
                 nova.setDataCriacao(LocalDate.now());
 
                 // Estado inicial: Planeada (id=1) via serviço
@@ -417,67 +429,43 @@ public class ObrasPanel extends BasePanel {
         if (obra == null) return;
 
         JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Detalhe da Obra", Dialog.ModalityType.APPLICATION_MODAL);
-        dlg.setSize(540, 520);
+        dlg.setSize(580, 560);
         dlg.setLocationRelativeTo(this);
 
-        JPanel content = new JPanel(new BorderLayout(0, 16));
-        content.setBorder(new EmptyBorder(24, 28, 24, 28));
+        JPanel content = new JPanel(new BorderLayout(0, 12));
+        content.setBorder(new EmptyBorder(20, 24, 20, 24));
         content.setBackground(UIManager.getColor("Panel.background"));
 
-        // Título + badge estado
+        // ── Topo: título + badge estado ─────────────────────────────────
         JPanel topoTitulo = new JPanel(new BorderLayout(12, 0));
         topoTitulo.setOpaque(false);
+        topoTitulo.setBorder(new EmptyBorder(0, 0, 8, 0));
 
         JLabel lblTitulo = new JLabel("Obra #" + obra.getId());
         lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 18f));
 
         String nomeEstado = obra.getIdEstadoObra() != null ? obra.getIdEstadoObra().getNomeEstado() : "—";
         JLabel badgeEstado = buildBadgeEstado(nomeEstado);
-
         topoTitulo.add(lblTitulo,   BorderLayout.WEST);
         topoTitulo.add(badgeEstado, BorderLayout.EAST);
 
-        // Separador
-        JSeparator sep = new JSeparator();
-        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        // ── Tabs ────────────────────────────────────────────────────────
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(tabs.getFont().deriveFont(12f));
 
-        // Corpo com detalhes
-        JPanel detalhe = new JPanel(new GridBagLayout());
-        detalhe.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 0, 6, 16);
-        gbc.anchor = GridBagConstraints.WEST;
+        // Tab 1 — Informações
+        tabs.addTab("Informações", buildTabInfo(obra));
 
-        String cliente   = obra.getIdCliente() != null ? obra.getIdCliente().getNome() : "—";
-        String nif       = obra.getIdCliente() != null && obra.getIdCliente().getNif() != null ? obra.getIdCliente().getNif() : "—";
-        String desc      = obra.getDescricao() != null ? obra.getDescricao() : "Sem descrição";
-        String morada    = obra.getRua() + " nº" + obra.getNporta() + ", " + obra.getLocalidade();
-        String cp        = obra.getIdCodpostal() != null ? obra.getIdCodpostal().getCodpostal() : "—";
-        String dataCria  = obra.getDataCriacao() != null ? obra.getDataCriacao().format(FMT) : "—";
+        // Tab 2 — Visitas
+        tabs.addTab("Visitas", buildTabVisitas(obra));
 
-        addDetalheRow(detalhe, gbc, 0, "Cliente",        cliente);
-        addDetalheRow(detalhe, gbc, 1, "NIF Cliente",    nif);
-        addDetalheRow(detalhe, gbc, 2, "Descrição",      desc);
-        addDetalheRow(detalhe, gbc, 3, "Morada",         morada);
-        addDetalheRow(detalhe, gbc, 4, "Código Postal",  cp);
-        addDetalheRow(detalhe, gbc, 5, "Data Registo",   dataCria);
-        addDetalheRow(detalhe, gbc, 6, "Estado",         nomeEstado);
+        // Tab 3 — Problemas
+        tabs.addTab("Problemas", buildTabProblemas(obra, dlg));
 
-        // Visitas
-        List<Visita> visitas = visitaService.buscarPorObra(obra);
-        addDetalheRow(detalhe, gbc, 7, "Visitas",
-                visitas.isEmpty() ? "Nenhuma visita registada" : visitas.size() + " visita(s) registada(s)");
-
-        // Orçamento
-        orcamentoService.buscarPorObra(obra).ifPresentOrElse(
-                orc -> addDetalheRow(detalhe, gbc, 8, "Orçamento", orc.getAprovado() ? "✓ Aprovado" : "Pendente de aprovação"),
-                ()   -> addDetalheRow(detalhe, gbc, 8, "Orçamento", "Sem orçamento")
-        );
-
-        // Painel de acções rápidas
+        // ── Rodapé ──────────────────────────────────────────────────────
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         acoes.setOpaque(false);
-        acoes.setBorder(new EmptyBorder(8, 0, 0, 0));
+        acoes.setBorder(new EmptyBorder(4, 0, 0, 0));
 
         JButton btnAlterarEstado = buildSmallButton("Alterar Estado");
         JButton btnAgendarVisita = buildSmallButton("Agendar Visita");
@@ -492,12 +480,168 @@ public class ObrasPanel extends BasePanel {
         acoes.add(Box.createHorizontalStrut(8));
         acoes.add(btnFechar);
 
-        content.add(topoTitulo,  BorderLayout.NORTH);
-        content.add(detalhe,     BorderLayout.CENTER);
-        content.add(acoes,       BorderLayout.SOUTH);
+        content.add(topoTitulo, BorderLayout.NORTH);
+        content.add(tabs,       BorderLayout.CENTER);
+        content.add(acoes,      BorderLayout.SOUTH);
 
         dlg.setContentPane(content);
         dlg.setVisible(true);
+    }
+
+    // ── Tab Informações ───────────────────────────────────────────────────────
+
+    private JPanel buildTabInfo(Obra obra) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(14, 4, 4, 4));
+
+        JPanel detalhe = new JPanel(new GridBagLayout());
+        detalhe.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 0, 6, 16);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        String cliente  = obra.getIdCliente() != null ? obra.getIdCliente().getNome() : "—";
+        String nif      = obra.getIdCliente() != null && obra.getIdCliente().getNif() != null
+                ? obra.getIdCliente().getNif() : "—";
+        String desc     = obra.getDescricao() != null ? obra.getDescricao() : "Sem descrição";
+        String morada   = obra.getRua() + " nº" + obra.getNporta() + ", " + obra.getLocalidade();
+        String cp       = obra.getIdCodpostal() != null ? obra.getIdCodpostal().getCodpostal() : "—";
+        String dataCria = obra.getDataCriacao() != null ? obra.getDataCriacao().format(FMT) : "—";
+
+        addDetalheRow(detalhe, gbc, 0, "Cliente",       cliente);
+        addDetalheRow(detalhe, gbc, 1, "NIF Cliente",   nif);
+        addDetalheRow(detalhe, gbc, 2, "Descrição",     desc);
+        addDetalheRow(detalhe, gbc, 3, "Morada",        morada);
+        addDetalheRow(detalhe, gbc, 4, "Código Postal", cp);
+        addDetalheRow(detalhe, gbc, 5, "Data Registo",  dataCria);
+
+        orcamentoService.buscarPorObra(obra).ifPresentOrElse(
+                orc -> addDetalheRow(detalhe, gbc, 6, "Orçamento",
+                        orc.getAprovado() ? "✓ Aprovado" : "Pendente de aprovação"),
+                ()   -> addDetalheRow(detalhe, gbc, 6, "Orçamento", "Sem orçamento")
+        );
+
+        panel.add(detalhe, BorderLayout.NORTH);
+        return panel;
+    }
+
+    // ── Tab Visitas ───────────────────────────────────────────────────────────
+
+    private JPanel buildTabVisitas(Obra obra) {
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(12, 4, 4, 4));
+
+        List<Visita> visitas = visitaService.buscarPorObra(obra);
+        DateTimeFormatter fmtV = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                .withZone(ZoneId.systemDefault());
+
+        if (visitas.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhuma visita registada para esta obra.");
+            vazio.setForeground(UIManager.getColor("Label.disabledForeground"));
+            vazio.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(vazio, BorderLayout.CENTER);
+            return panel;
+        }
+
+        DefaultTableModel m = new DefaultTableModel(
+                new String[]{"Data", "Notas (excerto)"}, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        for (Visita v : visitas) {
+            String data  = v.getDataVisita() != null ? fmtV.format(v.getDataVisita()) : "—";
+            String notas = excerto(v.getNotasMedicoes(), 55);
+            m.addRow(new Object[]{data, notas});
+        }
+
+        JTable t = new JTable(m);
+        t.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
+        t.setShowVerticalLines(false);
+        t.setFillsViewportHeight(true);
+        t.getColumnModel().getColumn(0).setPreferredWidth(130);
+        t.getColumnModel().getColumn(1).setPreferredWidth(340);
+
+        JLabel lblTot = new JLabel(visitas.size() + " visita(s) registada(s)");
+        lblTot.setFont(lblTot.getFont().deriveFont(Font.PLAIN, 11f));
+        lblTot.setForeground(UIManager.getColor("Label.disabledForeground"));
+
+        panel.add(lblTot,              BorderLayout.NORTH);
+        panel.add(buildTablePane(t),   BorderLayout.CENTER);
+        return panel;
+    }
+
+    // ── Tab Problemas ─────────────────────────────────────────────────────────
+
+    private JPanel buildTabProblemas(Obra obra, JDialog dlg) {
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(12, 4, 4, 4));
+
+        List<Problema> problemas = problemaService.buscarPorObra(obra);
+
+        if (problemas.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhum problema reportado para esta obra.");
+            vazio.setForeground(UIManager.getColor("Label.disabledForeground"));
+            vazio.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(vazio, BorderLayout.CENTER);
+            return panel;
+        }
+
+        DateTimeFormatter fmtP = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                .withZone(ZoneId.systemDefault());
+
+        DefaultTableModel m = new DefaultTableModel(
+                new String[]{"Gravidade", "Data", "Descrição"}, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        for (Problema p : problemas) {
+            String grav = p.getIdGravidade() != null ? p.getIdGravidade().getNomeGravidade() : "—";
+            String data = p.getDataReporte() != null ? fmtP.format(p.getDataReporte()) : "—";
+            String desc = excerto(p.getDescricao(), 55);
+            m.addRow(new Object[]{grav, data, desc});
+        }
+
+        JTable t = new JTable(m);
+        t.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
+        t.setShowVerticalLines(false);
+        t.setFillsViewportHeight(true);
+        t.getColumnModel().getColumn(0).setPreferredWidth(90);
+        t.getColumnModel().getColumn(1).setPreferredWidth(130);
+        t.getColumnModel().getColumn(2).setPreferredWidth(310);
+
+        // Badge de gravidade na coluna 0
+        t.getColumnModel().getColumn(0).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object v,
+                                                           boolean sel, boolean foc, int row, int col) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(tbl, v, sel, foc, row, col);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setOpaque(true);
+                lbl.setBorder(new EmptyBorder(2, 8, 2, 8));
+                lbl.setFont(lbl.getFont().deriveFont(Font.PLAIN, 11f));
+                if (!sel && v != null) {
+                    Color bg = ProblemasPanel.corGravidade(v.toString());
+                    lbl.setBackground(bg.brighter().brighter());
+                    lbl.setForeground(bg.darker().darker());
+                }
+                return lbl;
+            }
+        });
+
+        // Contador + botão para ver todos na sidebar
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.setOpaque(false);
+
+        JLabel lblTot = new JLabel(problemas.size() + " problema(s) reportado(s)");
+        lblTot.setFont(lblTot.getFont().deriveFont(Font.PLAIN, 11f));
+        lblTot.setForeground(UIManager.getColor("Label.disabledForeground"));
+
+        topo.add(lblTot, BorderLayout.WEST);
+
+        panel.add(topo,              BorderLayout.NORTH);
+        panel.add(buildTablePane(t), BorderLayout.CENTER);
+        return panel;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -878,6 +1022,12 @@ public class ObrasPanel extends BasePanel {
     // ─────────────────────────────────────────────────────────────────────
     //  HELPER — truncar texto
     // ─────────────────────────────────────────────────────────────────────
+
+    private static String excerto(String texto, int max) {
+        if (texto == null || texto.isBlank()) return "—";
+        String limpo = texto.replace('\n', ' ').trim();
+        return limpo.length() <= max ? limpo : limpo.substring(0, max) + "…";
+    }
 
     private static String truncar(String s, int max) {
         if (s == null) return "—";

@@ -15,13 +15,13 @@ public class Equipafuncionario {
     private EquipafuncionarioId id;
 
     @MapsId("idEquipa")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_equipa", nullable = false)
     private Equipa idEquipa;
 
     @MapsId("idFuncionario")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_funcionario", nullable = false)
     private Funcionario idFuncionario;

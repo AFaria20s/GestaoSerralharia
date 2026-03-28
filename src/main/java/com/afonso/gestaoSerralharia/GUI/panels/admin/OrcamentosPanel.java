@@ -740,6 +740,14 @@ public class OrcamentosPanel extends BasePanel {
         // ── Form de linha ─────────────────────────────────────────────────────
         private void abrirFormLinha(Integer idLinha) {
             Linhaorcamento ex = idLinha != null ? linhaorcamentoService.buscarPorId(idLinha) : null;
+
+            // Recolher grupos já existentes neste orçamento
+            java.util.LinkedHashSet<String> gruposExistentes = new java.util.LinkedHashSet<>();
+            for (Linhaorcamento l : linhaorcamentoService.buscarPorOrcamento(orc)) {
+                String[] partes = extrairGrupoEDescricao(l.getNome());
+                if (!partes[0].isBlank()) gruposExistentes.add(partes[0]);
+            }
+
             Window owner = SwingUtilities.getWindowAncestor(dialogo);
             JDialog dlgL = owner instanceof Frame
                     ? new JDialog((Frame) owner, ex == null ? "Nova linha" : "Editar linha", true)
@@ -747,7 +755,7 @@ public class OrcamentosPanel extends BasePanel {
             dlgL.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dlgL.setResizable(true);
 
-            FormLinha form = new FormLinha(dlgL, ex);
+            FormLinha form = new FormLinha(dlgL, ex, gruposExistentes);
 
             // Envolver em JScrollPane — garante que a label nunca sai do viewport
             JScrollPane scroll = new JScrollPane(form);
@@ -781,7 +789,7 @@ public class OrcamentosPanel extends BasePanel {
     // =========================================================================
     private class FormLinha extends JPanel {
         private boolean confirmado = false;
-        private final JTextField                    campoGrupo;
+        private final JComboBox<String>             comboGrupo;
         private final JTextField                    campoNome;
         private final JComboBox<Tipolinhaorcamento> comboTipo;
         private final JComboBox<Taxaiva>            comboIva;
@@ -789,7 +797,7 @@ public class OrcamentosPanel extends BasePanel {
         private final JTextField                    campoPreco;
         private final JLabel                        lblErro;
 
-        FormLinha(JDialog dialogo, Linhaorcamento existente) {
+        FormLinha(JDialog dialogo, Linhaorcamento existente, java.util.Set<String> gruposExistentes) {
             setLayout(new BorderLayout());
 
             JPanel corpo = new JPanel(new GridBagLayout());
@@ -798,7 +806,12 @@ public class OrcamentosPanel extends BasePanel {
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.HORIZONTAL; c.weightx = 1.0; c.gridx = 0;
 
-            campoGrupo = new JTextField();
+            // Combo editável de grupos
+            comboGrupo = new JComboBox<>();
+            comboGrupo.setEditable(true);
+            comboGrupo.addItem(""); // opção vazia (sem grupo)
+            gruposExistentes.forEach(g -> { if (!g.isBlank()) comboGrupo.addItem(g); });
+
             campoNome  = new JTextField();
             campoQtd   = new JTextField();
             campoPreco = new JTextField();
@@ -823,7 +836,7 @@ public class OrcamentosPanel extends BasePanel {
 
             if (existente != null) {
                 String[] partes = extrairGrupoEDescricao(existente.getNome());
-                campoGrupo.setText(partes[0]);
+                comboGrupo.setSelectedItem(partes[0]);
                 campoNome.setText(partes[1].equals("—") ? "" : partes[1]);
                 campoQtd.setText(existente.getQuantidade() != null ? existente.getQuantidade().stripTrailingZeros().toPlainString() : "1");
                 campoPreco.setText(existente.getPrecoUnit() != null ? existente.getPrecoUnit().toPlainString() : "");
@@ -833,8 +846,8 @@ public class OrcamentosPanel extends BasePanel {
                     for (int i = 0; i < taxas.size(); i++) if (taxas.get(i).getId().equals(existente.getIdIva().getId())) { comboIva.setSelectedIndex(i); break; }
             } else { campoQtd.setText("1"); }
 
-            // Nota informativa sobre o grupo
-            JLabel lblDica = new JLabel("<html><i>Linhas com o mesmo Grupo/Janela aparecem agrupadas no PDF do cliente.</i></html>");
+            // Nota explicativa sobre grupos
+            JLabel lblDica = new JLabel("<html><i>Escolhe um grupo existente ou escreve um novo. Linhas do mesmo grupo aparecem agrupadas no PDF do cliente.</i></html>");
             lblDica.setFont(lblDica.getFont().deriveFont(UIConstants.FONT_SMALL));
             lblDica.setForeground(UIManager.getColor("Label.disabledForeground"));
             GridBagConstraints cDica = new GridBagConstraints();
@@ -842,12 +855,12 @@ public class OrcamentosPanel extends BasePanel {
             cDica.gridy = 0; cDica.insets = new Insets(0, 0, 8, 0);
             corpo.add(lblDica, cDica);
 
-            addField(corpo, c, 1, "Grupo / Janela  (ex: Janela Sala)", campoGrupo);
-            addField(corpo, c, 2, "Descrição do item *",               campoNome);
-            addField(corpo, c, 3, "Tipo de linha",                     comboTipo);
-            addField(corpo, c, 4, "Taxa de IVA",                       comboIva);
-            addField(corpo, c, 5, "Quantidade *",                      campoQtd);
-            addField(corpo, c, 6, "Preço unitário (€) *",              campoPreco);
+            addField(corpo, c, 1, "Grupo / Janela  (opcional)", comboGrupo);
+            addField(corpo, c, 2, "Descrição do item *",        campoNome);
+            addField(corpo, c, 3, "Tipo de linha",              comboTipo);
+            addField(corpo, c, 4, "Taxa de IVA",                comboIva);
+            addField(corpo, c, 5, "Quantidade *",               campoQtd);
+            addField(corpo, c, 6, "Preço unitário (€) *",       campoPreco);
 
             lblErro = new JLabel(" ");
             lblErro.setForeground(UIConstants.COLOR_DANGER);
@@ -869,7 +882,6 @@ public class OrcamentosPanel extends BasePanel {
             setPreferredSize(new Dimension(460, getPreferredSize().height));
         }
 
-        /** Extrai grupo e descrição — duplicado aqui para acesso no FormLinha sem precisar de instância DetalheOrcamento. */
         private String[] extrairGrupoEDescricao(String nome) {
             if (nome == null) return new String[]{"", "—"};
             if (nome.startsWith("[")) {
@@ -905,9 +917,9 @@ public class OrcamentosPanel extends BasePanel {
         boolean confirmado() { return confirmado; }
         Linhaorcamento construir() {
             Linhaorcamento l = new Linhaorcamento();
-            String grupo = campoGrupo.getText().trim();
+            Object selGrupo = comboGrupo.getSelectedItem();
+            String grupo = selGrupo != null ? selGrupo.toString().trim() : "";
             String desc  = campoNome.getText().trim();
-            // Guarda como "[Grupo] Descrição" se tiver grupo, senão só "Descrição"
             l.setNome(grupo.isBlank() ? desc : "[" + grupo + "] " + desc);
             l.setQuantidade(new BigDecimal(campoQtd.getText().trim().replace(',', '.')));
             l.setPrecoUnit(new BigDecimal(campoPreco.getText().trim().replace(',', '.')));
@@ -916,4 +928,5 @@ public class OrcamentosPanel extends BasePanel {
             return l;
         }
     }
+
 }
