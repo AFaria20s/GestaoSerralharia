@@ -28,7 +28,7 @@ public class Cliente {
     @Column(name = "nporta", length = 10)
     private String nporta;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_codpostal")
     private Codpostal idCodpostal;
