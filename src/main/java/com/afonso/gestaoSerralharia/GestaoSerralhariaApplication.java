@@ -25,6 +25,9 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
     private final CodpostalService codpostalService;
     private final VisitaService visitaService;
     private final OrcamentoService orcamentoService;
+    private final LinhaorcamentoService linhaorcamentoService;
+    private final TaxaivaService taxaivaService;
+    private final TipolinhaorcamentoService tipolinhaorcamentoService;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GestaoSerralhariaApplication.class)
@@ -37,7 +40,8 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
         SwingUtilities.invokeLater(() ->
                 new GUIDesktop(authService, obraService, tarefaService, faturaService,
                         problemaService, clienteService, funcionarioService, cargoService,
-                        estadoobraService, codpostalService, visitaService, orcamentoService
+                        estadoobraService, codpostalService, visitaService, orcamentoService,
+                        linhaorcamentoService, taxaivaService, tipolinhaorcamentoService
                 ));
     }
 }

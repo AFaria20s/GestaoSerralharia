@@ -19,7 +19,7 @@ public class Orcamento {
     @Column(name = "id_orcamento", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_obra")
     private Obra idObra;

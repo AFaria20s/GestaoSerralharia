@@ -368,7 +368,7 @@ public class FuncionariosPanel extends BasePanel {
             lblErro = new JLabel(" ");
             lblErro.setForeground(UIConstants.COLOR_DANGER);
             lblErro.setFont(lblErro.getFont().deriveFont(UIConstants.FONT_SMALL));
-            c.gridy = row;
+            c.gridy = row*2;
             c.gridx = 0;
             c.gridwidth = 2;
             corpo.add(lblErro, c);
@@ -405,18 +405,18 @@ public class FuncionariosPanel extends BasePanel {
             JLabel lbl = new JLabel(label);
             lbl.setFont(lbl.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
 
-            c.gridy = row;
+            // Label na linha par
+            c.gridy = row * 2;
             c.gridx = 0;
             c.gridwidth = 2;
             c.insets = new Insets(8, 0, 2, 0);
             panel.add(lbl, c);
 
-            c.gridy = row;
+            // Campo na linha ímpar seguinte
+            c.gridy = row * 2 + 1;
             c.gridx = 0;
             c.gridwidth = 2;
             c.insets = new Insets(0, 0, 4, 0);
-            // Usar row + 0.5 não é possível; usar dois rows por campo
-            c.gridy = row * 2 + 1;
             panel.add(campo, c);
         }
 

@@ -21,12 +21,16 @@ public class GUIDesktop {
                       EstadoobraService estadoobraService,
                       CodpostalService codpostalService,
                       VisitaService visitaService,
-                      OrcamentoService orcamentoService
+                      OrcamentoService orcamentoService,
+                      LinhaorcamentoService linhaorcamentoService,
+                      TaxaivaService taxaivaService,
+                      TipolinhaorcamentoService tipolinhaorcamentoService
     ) {
         setupLookAndFeel();
         new AppFrame(authService, obraService, tarefaService, faturaService,
                 problemaService, clienteService, funcionarioService, cargoService,
-                estadoobraService, codpostalService, visitaService, orcamentoService);
+                estadoobraService, codpostalService, visitaService, orcamentoService,
+                linhaorcamentoService, taxaivaService, tipolinhaorcamentoService);
     }
 
     private void setupLookAndFeel() {

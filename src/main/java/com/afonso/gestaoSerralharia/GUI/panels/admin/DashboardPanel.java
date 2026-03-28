@@ -20,20 +20,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Dashboard do administrador — resumo geral da empresa.
- *
- * Secções:
- *  • KPI cards  — Obras em execução, Tarefas atrasadas, Valor por receber, Orçamentos p/ aprovar
- *  • Obras em execução (tabela compacta)
- *  • Tarefas atrasadas (tabela compacta)
- *  • Orçamentos p/ aprovar
- *  • Visitas hoje e amanhã
- *  • Problemas reportados
- */
 public class DashboardPanel extends BasePanel {
 
-    // ── Serviços ─────────────────────────────────────────────────────────────
     private final ObraService        obraService;
     private final TarefaService      tarefaService;
     private final FaturaService      faturaService;
@@ -41,7 +29,6 @@ public class DashboardPanel extends BasePanel {
     private final ClienteService     clienteService;
     private final FuncionarioService funcionarioService;
 
-    // ── KPI labels ────────────────────────────────────────────────────────────
     private JLabel lblObrasValor;
     private JLabel lblObrasSubtitulo;
     private JLabel lblTarefasValor;
@@ -51,23 +38,18 @@ public class DashboardPanel extends BasePanel {
     private JLabel lblOrcamentosValor;
     private JLabel lblOrcamentosSubtitulo;
 
-    // ── Badges das tabelas ────────────────────────────────────────────────────
     private JLabel lblBadgeObras;
     private JLabel lblBadgeTarefas;
 
-    // ── Tabelas ───────────────────────────────────────────────────────────────
     private DefaultTableModel modeloObras;
     private DefaultTableModel modeloTarefas;
 
-    // ── Painéis inferiores ────────────────────────────────────────────────────
     private JPanel painelOrcamentos;
     private JPanel painelVisitas;
     private JPanel painelProblemas;
 
-    private static final DateTimeFormatter FMT_DATA  = DateTimeFormatter.ofPattern("dd/MM");
-    private static final DateTimeFormatter FMT_FULL  = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-    // ─────────────────────────────────────────────────────────────────────────
+    private static final DateTimeFormatter FMT_DATA = DateTimeFormatter.ofPattern("dd/MM");
+    private static final DateTimeFormatter FMT_FULL = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public DashboardPanel(ObraService obraService, TarefaService tarefaService,
                           FaturaService faturaService, ProblemaService problemaService,
@@ -82,17 +64,13 @@ public class DashboardPanel extends BasePanel {
         String nome     = SessionManager.getInstance().getNome();
         String saudacao = saudacao() + (nome != null && !nome.isBlank() ? ", " + nome.split(" ")[0] : "");
 
-        JButton btnRefresh = buildButton("↻ Actualizar");
+        JButton btnRefresh = buildButton("Actualizar");
         btnRefresh.addActionListener(e -> carregar());
 
         add(buildHeader("Dashboard", saudacao, btnRefresh), BorderLayout.NORTH);
         add(buildScroll(), BorderLayout.CENTER);
         carregar();
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SCROLL + CORPO
-    // ─────────────────────────────────────────────────────────────────────────
 
     private JScrollPane buildScroll() {
         JPanel corpo = new JPanel();
@@ -115,29 +93,25 @@ public class DashboardPanel extends BasePanel {
         return scroll;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  KPI CARDS
-    // ─────────────────────────────────────────────────────────────────────────
-
     private JPanel buildSecaoKpi() {
         JPanel grid = new JPanel(new GridLayout(1, 4, 16, 0));
         grid.setOpaque(false);
         grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         grid.setAlignmentX(LEFT_ALIGNMENT);
 
-        lblObrasValor       = new JLabel("—");
-        lblObrasSubtitulo   = new JLabel(" ");
-        lblTarefasValor     = new JLabel("—");
-        lblTarefasSubtitulo = new JLabel(" ");
-        lblFaturasValor     = new JLabel("—");
-        lblFaturasSubtitulo = new JLabel(" ");
-        lblOrcamentosValor  = new JLabel("—");
+        lblObrasValor          = new JLabel("—");
+        lblObrasSubtitulo      = new JLabel(" ");
+        lblTarefasValor        = new JLabel("—");
+        lblTarefasSubtitulo    = new JLabel(" ");
+        lblFaturasValor        = new JLabel("—");
+        lblFaturasSubtitulo    = new JLabel(" ");
+        lblOrcamentosValor     = new JLabel("—");
         lblOrcamentosSubtitulo = new JLabel(" ");
 
-        grid.add(buildKpiCard("Obras em execução",   lblObrasValor,      lblObrasSubtitulo,      UIConstants.COLOR_INFO,    new Color(59, 130, 246)));
-        grid.add(buildKpiCard("Tarefas atrasadas",   lblTarefasValor,    lblTarefasSubtitulo,    UIConstants.COLOR_DANGER,  new Color(220, 38, 38)));
-        grid.add(buildKpiCard("Valor por receber",   lblFaturasValor,    lblFaturasSubtitulo,    UIConstants.COLOR_WARNING, new Color(217, 119, 6)));
-        grid.add(buildKpiCard("Orçamentos p/ aprovar", lblOrcamentosValor, lblOrcamentosSubtitulo, UIConstants.COLOR_WARNING, new Color(22, 163, 74)));
+        grid.add(buildKpiCard("Obras em execução",    lblObrasValor,      lblObrasSubtitulo,      UIConstants.COLOR_INFO,    new Color(59, 130, 246)));
+        grid.add(buildKpiCard("Tarefas atrasadas",    lblTarefasValor,    lblTarefasSubtitulo,    UIConstants.COLOR_DANGER,  new Color(220, 38, 38)));
+        grid.add(buildKpiCard("Valor por receber",    lblFaturasValor,    lblFaturasSubtitulo,    UIConstants.COLOR_WARNING, new Color(217, 119, 6)));
+        grid.add(buildKpiCard("Orcamentos p/ aprovar", lblOrcamentosValor, lblOrcamentosSubtitulo, UIConstants.COLOR_WARNING, new Color(22, 163, 74)));
 
         return grid;
     }
@@ -150,10 +124,6 @@ public class DashboardPanel extends BasePanel {
                 new LineBorder(borderColor(), 1, true),
                 new EmptyBorder(18, 20, 18, 20)));
 
-        // Topo: dot + título
-        JPanel topo = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        topo.setOpaque(false);
-
         JLabel dot = new JLabel("●");
         dot.setForeground(corDot);
         dot.setFont(dot.getFont().deriveFont(9f));
@@ -162,14 +132,14 @@ public class DashboardPanel extends BasePanel {
         lblTit.setFont(lblTit.getFont().deriveFont(Font.PLAIN, 12f));
         lblTit.setForeground(UIManager.getColor("Label.disabledForeground"));
 
+        JPanel topo = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        topo.setOpaque(false);
         topo.add(dot);
         topo.add(lblTit);
 
-        // Valor grande
         lblValor.setFont(lblValor.getFont().deriveFont(Font.BOLD, 34f));
         lblValor.setForeground(corValor);
 
-        // Subtítulo (ex: "3 com visita pendente")
         lblSub.setFont(lblSub.getFont().deriveFont(Font.PLAIN, 11f));
         lblSub.setForeground(corValor);
 
@@ -182,10 +152,6 @@ public class DashboardPanel extends BasePanel {
         card.add(centro, BorderLayout.CENTER);
         return card;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  TABELAS (obras + tarefas)
-    // ─────────────────────────────────────────────────────────────────────────
 
     private JPanel buildSecaoTabelas() {
         JPanel linha = new JPanel(new GridLayout(1, 2, 16, 0));
@@ -202,20 +168,18 @@ public class DashboardPanel extends BasePanel {
     }
 
     private JPanel buildTabelaObras() {
-        modeloObras = new DefaultTableModel(new String[]{"Obra", "Cliente", "Início"}, 0) {
+        modeloObras = new DefaultTableModel(new String[]{"Obra", "Cliente", "Inicio"}, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tabela = miniTabela(modeloObras);
-        return buildCartaoTabela("Obras em execução", lblBadgeObras, tabela);
+        return buildCartaoTabela("Obras em execucao", lblBadgeObras, miniTabela(modeloObras));
     }
 
     private JPanel buildTabelaTarefas() {
-        modeloTarefas = new DefaultTableModel(new String[]{"Tarefa", "Funcionário", "Limite"}, 0) {
+        modeloTarefas = new DefaultTableModel(new String[]{"Tarefa", "Funcionario", "Limite"}, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tabela = miniTabela(modeloTarefas);
 
-        // Coluna "Limite" a vermelho
+        JTable tabela = miniTabela(modeloTarefas);
         tabela.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
             JLabel l = new JLabel(v != null ? v.toString() : "");
             l.setFont(t.getFont().deriveFont(12f));
@@ -237,14 +201,13 @@ public class DashboardPanel extends BasePanel {
                 new LineBorder(borderColor(), 1, true),
                 new EmptyBorder(16, 18, 16, 18)));
 
-        // Cabeçalho com badge
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-
         JLabel lblTit = new JLabel(titulo);
         lblTit.setFont(lblTit.getFont().deriveFont(Font.BOLD, 13f));
-        header.add(lblTit,  BorderLayout.WEST);
-        header.add(badge,   BorderLayout.EAST);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.add(lblTit, BorderLayout.WEST);
+        header.add(badge,  BorderLayout.EAST);
 
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createEmptyBorder());
@@ -254,10 +217,6 @@ public class DashboardPanel extends BasePanel {
         card.add(scroll, BorderLayout.CENTER);
         return card;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SECÇÃO INFERIOR (orçamentos + visitas + problemas)
-    // ─────────────────────────────────────────────────────────────────────────
 
     private JPanel buildSecaoInferior() {
         JPanel linha = new JPanel(new GridLayout(1, 3, 16, 0));
@@ -275,92 +234,62 @@ public class DashboardPanel extends BasePanel {
         return linha;
     }
 
-    // ── Card: Orçamentos p/ aprovar ──────────────────────────────────────────
-
     private JPanel buildCardOrcamentos() {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
-        card.setOpaque(true);
-        card.setBackground(UIManager.getColor("Panel.background"));
-        card.setBorder(new CompoundBorder(
-                new LineBorder(borderColor(), 1, true),
-                new EmptyBorder(16, 18, 16, 18)));
-
-        JLabel tit = new JLabel("Orçamentos p/ aprovar");
-        tit.setFont(tit.getFont().deriveFont(Font.BOLD, 13f));
+        JLabel badge = buildBadge("2 pendentes", UIConstants.COLOR_WARNING);
 
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
-        header.add(tit, BorderLayout.WEST);
-
-        JLabel badge = buildBadge("2 pendentes", UIConstants.COLOR_WARNING);
+        header.add(cardTitulo("Orcamentos p/ aprovar"), BorderLayout.WEST);
         header.add(badge, BorderLayout.EAST);
 
-        JPanel lista = new JPanel();
-        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-        lista.setOpaque(false);
-        lista.setName("listaOrcamentos");
+        JPanel lista = listaPanel("listaOrcamentos");
 
-        card.add(header, BorderLayout.NORTH);
-        card.add(lista,  BorderLayout.CENTER);
-        return card;
+        return buildCard(header, lista);
     }
-
-    // ── Card: Visitas hoje e amanhã ──────────────────────────────────────────
 
     private JPanel buildCardVisitas() {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
-        card.setOpaque(true);
-        card.setBackground(UIManager.getColor("Panel.background"));
-        card.setBorder(new CompoundBorder(
-                new LineBorder(borderColor(), 1, true),
-                new EmptyBorder(16, 18, 16, 18)));
-
-        JLabel tit = new JLabel("Visitas hoje e amanhã");
-        tit.setFont(tit.getFont().deriveFont(Font.BOLD, 13f));
-
-        JPanel lista = new JPanel();
-        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-        lista.setOpaque(false);
-        lista.setName("listaVisitas");
-
-        card.add(tit,   BorderLayout.NORTH);
-        card.add(lista, BorderLayout.CENTER);
-        return card;
+        JPanel lista = listaPanel("listaVisitas");
+        return buildCard(cardTitulo("Visitas hoje e amanha"), lista);
     }
 
-    // ── Card: Problemas reportados ────────────────────────────────────────────
-
     private JPanel buildCardProblemas() {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
-        card.setOpaque(true);
-        card.setBackground(UIManager.getColor("Panel.background"));
-        card.setBorder(new CompoundBorder(
-                new LineBorder(borderColor(), 1, true),
-                new EmptyBorder(16, 18, 16, 18)));
-
-        JLabel tit = new JLabel("Problemas reportados");
-        tit.setFont(tit.getFont().deriveFont(Font.BOLD, 13f));
+        JLabel badge = buildBadge("1 critico", UIConstants.COLOR_DANGER);
 
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
-        header.add(tit, BorderLayout.WEST);
-
-        JLabel badge = buildBadge("1 crítico", UIConstants.COLOR_DANGER);
+        header.add(cardTitulo("Problemas reportados"), BorderLayout.WEST);
         header.add(badge, BorderLayout.EAST);
 
-        JPanel lista = new JPanel();
-        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-        lista.setOpaque(false);
-        lista.setName("listaProblemas");
+        JPanel lista = listaPanel("listaProblemas");
 
-        card.add(header, BorderLayout.NORTH);
-        card.add(lista,  BorderLayout.CENTER);
+        return buildCard(header, lista);
+    }
+
+    private JPanel buildCard(JComponent north, JPanel center) {
+        JPanel card = new JPanel(new BorderLayout(0, 10));
+        card.setOpaque(true);
+        card.setBackground(UIManager.getColor("Panel.background"));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(borderColor(), 1, true),
+                new EmptyBorder(16, 18, 16, 18)));
+        card.add(north,  BorderLayout.NORTH);
+        card.add(center, BorderLayout.CENTER);
         return card;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  CARREGAR DADOS
-    // ─────────────────────────────────────────────────────────────────────────
+    private JLabel cardTitulo(String texto) {
+        JLabel lbl = new JLabel(texto);
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 13f));
+        return lbl;
+    }
+
+    private JPanel listaPanel(String name) {
+        JPanel lista = new JPanel();
+        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
+        lista.setOpaque(false);
+        lista.setName(name);
+        return lista;
+    }
 
     private void carregar() {
         carregarKpis();
@@ -371,18 +300,14 @@ public class DashboardPanel extends BasePanel {
         carregarProblemas();
     }
 
-    // ── KPIs ─────────────────────────────────────────────────────────────────
-
     private void carregarKpis() {
-        // Obras em execução
         List<Obra> emExec = obraService.listarTodos().stream()
                 .filter(o -> o.getIdEstadoObra() != null &&
                         o.getIdEstadoObra().getNomeEstado().toLowerCase().contains("execu"))
                 .collect(Collectors.toList());
         lblObrasValor.setText(String.valueOf(emExec.size()));
-        lblObrasSubtitulo.setText(" ");  // pode ser enriquecido futuramente
+        lblObrasSubtitulo.setText(" ");
 
-        // Tarefas atrasadas
         List<Tarefa> atrasadas = tarefaService.buscarAtrasadas().stream()
                 .filter(t -> {
                     if (t.getIdEstadoTarefa() == null) return true;
@@ -391,13 +316,8 @@ public class DashboardPanel extends BasePanel {
                 })
                 .collect(Collectors.toList());
         lblTarefasValor.setText(String.valueOf(atrasadas.size()));
-        if (!atrasadas.isEmpty()) {
-            lblTarefasSubtitulo.setText("↑ " + atrasadas.size() + " tarefas em atraso");
-        } else {
-            lblTarefasSubtitulo.setText(" ");
-        }
+        lblTarefasSubtitulo.setText(atrasadas.isEmpty() ? " " : atrasadas.size() + " tarefas em atraso");
 
-        // Valor por receber (faturas pendentes)
         List<Fatura> pendentes = faturaService.listarTodos().stream()
                 .filter(f -> f.getValorTotalComIva() != null && f.getValorPago() != null
                         && f.getValorPago().compareTo(f.getValorTotalComIva()) < 0)
@@ -407,24 +327,17 @@ public class DashboardPanel extends BasePanel {
                 .map(f -> f.getValorTotalComIva().subtract(f.getValorPago()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Formatar valor: se >= 1000 mostrar com ponto; ex: € 6.840
-        String valorStr;
         long valorLong = totalPorReceber.longValue();
-        if (valorLong >= 1000) {
-            valorStr = "€ " + String.format("%,d", valorLong).replace(",", ".");
-        } else {
-            valorStr = "€ " + valorLong;
-        }
+        String valorStr = valorLong >= 1000
+                ? "€ " + String.format("%,d", valorLong).replace(",", ".")
+                : "€ " + valorLong;
         lblFaturasValor.setText(valorStr);
         lblFaturasSubtitulo.setText(pendentes.size() + " faturas pendentes");
 
-        // Orçamentos p/ aprovar — usando faturas sem pagamento como proxy até módulo dedicado
         long orcPendentes = pendentes.size();
         lblOrcamentosValor.setText(String.valueOf(orcPendentes > 9 ? "9+" : orcPendentes));
-        lblOrcamentosSubtitulo.setText("aguardam aprovação");
+        lblOrcamentosSubtitulo.setText("aguardam aprovacao");
     }
-
-    // ── Tabela obras ─────────────────────────────────────────────────────────
 
     private void carregarTabelaObras() {
         modeloObras.setRowCount(0);
@@ -442,11 +355,10 @@ public class DashboardPanel extends BasePanel {
             String data    = o.getDataCriacao() != null ? o.getDataCriacao().format(FMT_DATA) : "—";
             modeloObras.addRow(new Object[]{desc, cliente, data});
         }
-        if (modeloObras.getRowCount() == 0)
-            modeloObras.addRow(new Object[]{"Nenhuma obra em execução", "", ""});
-    }
 
-    // ── Tabela tarefas ────────────────────────────────────────────────────────
+        if (modeloObras.getRowCount() == 0)
+            modeloObras.addRow(new Object[]{"Nenhuma obra em execucao", "", ""});
+    }
 
     private void carregarTabelaTarefas() {
         modeloTarefas.setRowCount(0);
@@ -467,18 +379,16 @@ public class DashboardPanel extends BasePanel {
             String data = t.getDataLimite() != null ? t.getDataLimite().format(FMT_DATA) : "—";
             modeloTarefas.addRow(new Object[]{desc, func, data});
         }
+
         if (modeloTarefas.getRowCount() == 0)
             modeloTarefas.addRow(new Object[]{"Sem tarefas atrasadas", "", ""});
     }
-
-    // ── Orçamentos ────────────────────────────────────────────────────────────
 
     private void carregarOrcamentos() {
         JPanel lista = findNamed(painelOrcamentos, "listaOrcamentos");
         if (lista == null) return;
         lista.removeAll();
 
-        // Usar faturas pendentes como proxy até existir OrcamentoService
         List<Fatura> pendentes = faturaService.listarTodos().stream()
                 .filter(f -> f.getValorTotalComIva() != null && f.getValorPago() != null
                         && f.getValorPago().compareTo(f.getValorTotalComIva()) < 0)
@@ -486,10 +396,7 @@ public class DashboardPanel extends BasePanel {
                 .collect(Collectors.toList());
 
         if (pendentes.isEmpty()) {
-            JLabel vazio = new JLabel("Sem orçamentos pendentes");
-            vazio.setFont(vazio.getFont().deriveFont(12f));
-            vazio.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lista.add(vazio);
+            lista.add(labelVazio("Sem orcamentos pendentes"));
         } else {
             for (Fatura f : pendentes) {
                 lista.add(buildLinhaOrcamento(f));
@@ -502,69 +409,44 @@ public class DashboardPanel extends BasePanel {
     }
 
     private JPanel buildLinhaOrcamento(Fatura f) {
+        String titulo = f.getIdObra() != null && f.getIdObra().getDescricao() != null
+                ? truncar(f.getIdObra().getDescricao(), 28) : "Fatura #" + f.getId();
+        String sub = "emitido em " +
+                (f.getDataEmissao() != null ? f.getDataEmissao().format(FMT_FULL) : "—");
+
+        JButton btnVer = buildSmallButton("Ver");
+        btnVer.setPreferredSize(new Dimension(56, 36));
+
         JPanel linha = new JPanel(new BorderLayout(8, 2));
         linha.setOpaque(false);
         linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
         linha.setAlignmentX(LEFT_ALIGNMENT);
-
-        JPanel texto = new JPanel(new GridLayout(2, 1, 0, 2));
-        texto.setOpaque(false);
-
-        String titulo = f.getIdObra() != null && f.getIdObra().getDescricao() != null
-                ? truncar(f.getIdObra().getDescricao(), 28) : "Fatura #" + f.getId();
-        String sub    = "emitido em " +
-                (f.getDataEmissao() != null ? f.getDataEmissao().format(FMT_FULL) : "—");
-
-        JLabel lblTit = new JLabel(titulo);
-        lblTit.setFont(lblTit.getFont().deriveFont(Font.PLAIN, 12f));
-
-        JLabel lblSub = new JLabel(sub);
-        lblSub.setFont(lblSub.getFont().deriveFont(Font.PLAIN, 11f));
-        lblSub.setForeground(UIManager.getColor("Label.disabledForeground"));
-
-        texto.add(lblTit);
-        texto.add(lblSub);
-
-        JButton btnVer = buildSmallButton("Ver ↗");
-        btnVer.setPreferredSize(new Dimension(56, 36));
-
-        linha.add(texto,  BorderLayout.CENTER);
-        linha.add(btnVer, BorderLayout.EAST);
+        linha.add(buildTexto(titulo, sub), BorderLayout.CENTER);
+        linha.add(btnVer,                 BorderLayout.EAST);
         return linha;
     }
-
-    // ── Visitas ───────────────────────────────────────────────────────────────
 
     private void carregarVisitas() {
         JPanel lista = findNamed(painelVisitas, "listaVisitas");
         if (lista == null) return;
         lista.removeAll();
 
-        // Usar obras com visita pendente como proxy até existir VisitaService
-        // Mostra obras em execução com datas próximas como "visitas"
-        LocalDate hoje   = LocalDate.now();
-        LocalDate amanha = hoje.plusDays(1);
-
-        List<Obra> obrasProximas = obraService.listarTodos().stream()
+        List<Obra> obras = obraService.listarTodos().stream()
                 .filter(o -> o.getIdEstadoObra() != null &&
                         o.getIdEstadoObra().getNomeEstado().toLowerCase().contains("execu"))
                 .limit(4)
                 .collect(Collectors.toList());
 
-        if (obrasProximas.isEmpty()) {
-            JLabel vazio = new JLabel("Sem visitas agendadas");
-            vazio.setFont(vazio.getFont().deriveFont(12f));
-            vazio.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lista.add(vazio);
+        if (obras.isEmpty()) {
+            lista.add(labelVazio("Sem visitas agendadas"));
         } else {
             String[] horas = {"09:00", "14:30", "10:00", "11:00"};
-            String[] dias  = {"hoje", "hoje", "amanhã", "amanhã"};
+            String[] dias  = {"hoje", "hoje", "amanha", "amanha"};
             Color[]  cores = {UIConstants.COLOR_INFO, UIConstants.COLOR_INFO,
                     new Color(150, 150, 150), UIConstants.COLOR_SUCCESS};
 
-            for (int i = 0; i < obrasProximas.size(); i++) {
-                Obra o = obrasProximas.get(i);
-                lista.add(buildLinhaVisita(o, horas[i % horas.length],
+            for (int i = 0; i < obras.size(); i++) {
+                lista.add(buildLinhaVisita(obras.get(i), horas[i % horas.length],
                         dias[i % dias.length], cores[i % cores.length]));
                 lista.add(separador());
             }
@@ -575,44 +457,28 @@ public class DashboardPanel extends BasePanel {
     }
 
     private JPanel buildLinhaVisita(Obra o, String hora, String dia, Color corDot) {
-        JPanel linha = new JPanel(new BorderLayout(8, 0));
-        linha.setOpaque(false);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
-        linha.setAlignmentX(LEFT_ALIGNMENT);
+        String titulo  = o.getDescricao() != null ? truncar(o.getDescricao(), 30) : "#" + o.getId();
+        String cliente = o.getIdCliente() != null ? o.getIdCliente().getNome() : "—";
 
         JLabel dot = new JLabel("●");
         dot.setForeground(corDot);
         dot.setFont(dot.getFont().deriveFont(10f));
         dot.setVerticalAlignment(SwingConstants.TOP);
 
-        JPanel texto = new JPanel(new GridLayout(2, 1, 0, 2));
-        texto.setOpaque(false);
-
-        String titulo = o.getDescricao() != null ? truncar(o.getDescricao(), 30) : "#" + o.getId();
-        String cliente = o.getIdCliente() != null ? o.getIdCliente().getNome() : "—";
-
-        JLabel lblTit = new JLabel(titulo);
-        lblTit.setFont(lblTit.getFont().deriveFont(Font.PLAIN, 12f));
-
-        JLabel lblSub = new JLabel(cliente + " · " + dia);
-        lblSub.setFont(lblSub.getFont().deriveFont(Font.PLAIN, 11f));
-        lblSub.setForeground(UIManager.getColor("Label.disabledForeground"));
-
-        texto.add(lblTit);
-        texto.add(lblSub);
-
         JLabel lblHora = new JLabel(hora);
         lblHora.setFont(lblHora.getFont().deriveFont(Font.PLAIN, 12f));
         lblHora.setForeground(UIManager.getColor("Label.disabledForeground"));
         lblHora.setVerticalAlignment(SwingConstants.TOP);
 
-        linha.add(dot,     BorderLayout.WEST);
-        linha.add(texto,   BorderLayout.CENTER);
-        linha.add(lblHora, BorderLayout.EAST);
+        JPanel linha = new JPanel(new BorderLayout(8, 0));
+        linha.setOpaque(false);
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
+        linha.setAlignmentX(LEFT_ALIGNMENT);
+        linha.add(dot,                           BorderLayout.WEST);
+        linha.add(buildTexto(titulo, cliente + " · " + dia), BorderLayout.CENTER);
+        linha.add(lblHora,                       BorderLayout.EAST);
         return linha;
     }
-
-    // ── Problemas ─────────────────────────────────────────────────────────────
 
     private void carregarProblemas() {
         JPanel lista = findNamed(painelProblemas, "listaProblemas");
@@ -623,22 +489,20 @@ public class DashboardPanel extends BasePanel {
                 .limit(4)
                 .collect(Collectors.toList());
 
-        // Actualizar badge no header
         JPanel header = (JPanel) painelProblemas.getComponent(0);
         long criticos = problemas.stream()
                 .filter(p -> p.getIdGravidade() != null &&
-                        p.getIdGravidade().getNomeGravidade().toLowerCase().contains("crít"))
+                        p.getIdGravidade().getNomeGravidade().toLowerCase().contains("crit"))
                 .count();
         if (header.getComponentCount() > 1 && header.getComponent(1) instanceof JLabel) {
             JLabel badge = (JLabel) header.getComponent(1);
-            badge.setText(criticos > 0 ? criticos + " crítico" + (criticos > 1 ? "s" : "") : problemas.size() + " abertos");
+            badge.setText(criticos > 0
+                    ? criticos + " critico" + (criticos > 1 ? "s" : "")
+                    : problemas.size() + " abertos");
         }
 
         if (problemas.isEmpty()) {
-            JLabel vazio = new JLabel("Sem problemas reportados");
-            vazio.setFont(vazio.getFont().deriveFont(12f));
-            vazio.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lista.add(vazio);
+            lista.add(labelVazio("Sem problemas reportados"));
         } else {
             for (Problema p : problemas) {
                 lista.add(buildLinhaProblema(p));
@@ -651,49 +515,51 @@ public class DashboardPanel extends BasePanel {
     }
 
     private JPanel buildLinhaProblema(Problema p) {
-        JPanel linha = new JPanel(new BorderLayout(8, 2));
-        linha.setOpaque(false);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
-        linha.setAlignmentX(LEFT_ALIGNMENT);
-
-        JPanel texto = new JPanel(new GridLayout(2, 1, 0, 2));
-        texto.setOpaque(false);
-
         String descricao = p.getDescricao() != null ? truncar(p.getDescricao(), 28) : "#" + p.getId();
         String obraDesc  = (p.getIdObra() != null && p.getIdObra().getDescricao() != null)
                 ? truncar(p.getIdObra().getDescricao(), 28) : "—";
 
-        JLabel lblDesc  = new JLabel(descricao);
-        lblDesc.setFont(lblDesc.getFont().deriveFont(Font.PLAIN, 12f));
-
-        JLabel lblObra  = new JLabel(obraDesc);
-        lblObra.setFont(lblObra.getFont().deriveFont(Font.PLAIN, 11f));
-        lblObra.setForeground(UIManager.getColor("Label.disabledForeground"));
-
-        texto.add(lblDesc);
-        texto.add(lblObra);
-
-        // Badge de gravidade
         String nomeGrav = p.getIdGravidade() != null ? p.getIdGravidade().getNomeGravidade() : "—";
-        Color corGrav   = gravColor(nomeGrav);
-        JLabel badge    = buildBadge(nomeGrav, corGrav);
+        JLabel badge    = buildBadge(nomeGrav, gravColor(nomeGrav));
 
-        linha.add(texto, BorderLayout.CENTER);
-        linha.add(badge, BorderLayout.EAST);
+        JPanel linha = new JPanel(new BorderLayout(8, 2));
+        linha.setOpaque(false);
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
+        linha.setAlignmentX(LEFT_ALIGNMENT);
+        linha.add(buildTexto(descricao, obraDesc), BorderLayout.CENTER);
+        linha.add(badge,                           BorderLayout.EAST);
         return linha;
+    }
+
+    private JPanel buildTexto(String linha1, String linha2) {
+        JLabel lblTit = new JLabel(linha1);
+        lblTit.setFont(lblTit.getFont().deriveFont(Font.PLAIN, 12f));
+
+        JLabel lblSub = new JLabel(linha2);
+        lblSub.setFont(lblSub.getFont().deriveFont(Font.PLAIN, 11f));
+        lblSub.setForeground(UIManager.getColor("Label.disabledForeground"));
+
+        JPanel texto = new JPanel(new GridLayout(2, 1, 0, 2));
+        texto.setOpaque(false);
+        texto.add(lblTit);
+        texto.add(lblSub);
+        return texto;
+    }
+
+    private JLabel labelVazio(String mensagem) {
+        JLabel lbl = new JLabel(mensagem);
+        lbl.setFont(lbl.getFont().deriveFont(12f));
+        lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+        return lbl;
     }
 
     private Color gravColor(String nome) {
         if (nome == null) return UIConstants.COLOR_INFO;
         String n = nome.toLowerCase();
-        if (n.contains("crít")) return UIConstants.COLOR_DANGER;
+        if (n.contains("crit")) return UIConstants.COLOR_DANGER;
         if (n.contains("alt"))  return UIConstants.COLOR_WARNING;
-        return new Color(100, 116, 139); // média/baixa — cinza
+        return new Color(100, 116, 139);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  UTILITÁRIOS VISUAIS
-    // ─────────────────────────────────────────────────────────────────────────
 
     private JLabel buildBadge(String texto, Color cor) {
         JLabel badge = new JLabel(texto) {
@@ -736,7 +602,6 @@ public class DashboardPanel extends BasePanel {
         return t;
     }
 
-    /** Procura um JPanel filho pelo nome. */
     private JPanel findNamed(JPanel root, String name) {
         for (Component c : root.getComponents()) {
             if (c instanceof JPanel && name.equals(c.getName())) return (JPanel) c;
@@ -752,10 +617,6 @@ public class DashboardPanel extends BasePanel {
         Color c = UIManager.getColor("Component.borderColor");
         return c != null ? c : new Color(226, 232, 240);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  HELPERS GERAIS
-    // ─────────────────────────────────────────────────────────────────────────
 
     private static String saudacao() {
         int h = LocalTime.now().getHour();

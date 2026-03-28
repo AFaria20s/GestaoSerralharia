@@ -51,6 +51,9 @@ public class AppFrame extends JFrame {
     private final CodpostalService codPostalService;
     private final VisitaService visitaService;
     private final OrcamentoService orcamentoService;
+    private final LinhaorcamentoService    linhaorcamentoService;
+    private final TaxaivaService           taxaivaService;
+    private final TipolinhaorcamentoService tipolinhaorcamentoService;
 
     public AppFrame(AuthService authService,
                     ObraService obraService,
@@ -63,7 +66,10 @@ public class AppFrame extends JFrame {
                     EstadoobraService estadoObraService,
                     CodpostalService codPostalService,
                     VisitaService visitaService,
-                    OrcamentoService orcamentoService
+                    OrcamentoService orcamentoService,
+                    LinhaorcamentoService linhaorcamentoService,
+                    TaxaivaService taxaivaService,
+                    TipolinhaorcamentoService tipolinhaorcamentoService
     ) {
         this.authService        = authService;
         this.obraService        = obraService;
@@ -77,6 +83,9 @@ public class AppFrame extends JFrame {
         this.codPostalService = codPostalService;
         this.visitaService = visitaService;
         this.orcamentoService = orcamentoService;
+        this.linhaorcamentoService = linhaorcamentoService;
+        this.taxaivaService = taxaivaService;
+        this.tipolinhaorcamentoService = tipolinhaorcamentoService;
 
 
         setTitle("Serralharia");
@@ -413,8 +422,13 @@ public class AppFrame extends JFrame {
         addAdminPanel("obras",        new ObrasPanel(
                 obraService, clienteService, estadoObraService,
                 visitaService, orcamentoService, codPostalService));
-        addAdminPanel("visitas",      new VisitasPanel());
-        addAdminPanel("orcamentos",   new OrcamentosPanel());
+        addAdminPanel("visitas",      new VisitasPanel(visitaService, obraService));
+        addAdminPanel("orcamentos", new OrcamentosPanel(
+                orcamentoService,
+                linhaorcamentoService,
+                obraService,
+                taxaivaService,
+                tipolinhaorcamentoService));
         addAdminPanel("funcionarios", new FuncionariosPanel(funcionarioService, cargoService));
         addAdminPanel("equipas",      new EquipasPanel());
         addAdminPanel("tarefas",      new TarefasAdminPanel());

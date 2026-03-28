@@ -18,7 +18,7 @@ public class Visita {
     @Column(name = "id_visita", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_obra")
     private Obra idObra;
