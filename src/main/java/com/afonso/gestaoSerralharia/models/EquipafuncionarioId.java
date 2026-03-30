@@ -13,7 +13,6 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Embeddable
 public class EquipafuncionarioId implements Serializable {
-    private static final long serialVersionUID = 3478751780408838200L;
     @Column(name = "id_equipa", nullable = false)
     private Integer idEquipa;
 

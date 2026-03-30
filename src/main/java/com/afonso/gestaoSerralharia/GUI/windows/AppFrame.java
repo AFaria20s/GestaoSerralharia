@@ -153,9 +153,9 @@ public class AppFrame extends JFrame {
         panel.setPreferredSize(new Dimension(UIConstants.LOGIN_ACCENT_WIDTH, 0));
         panel.setBackground(UIConstants.COLOR_LOGIN_ACCENT_BG);
 
-        JLabel icon  = label("⚙", 30f, UIConstants.COLOR_LOGIN_ACCENT_ICON, Font.PLAIN);
-        JLabel line1 = label("Serra-", 15f, Color.WHITE, Font.BOLD);
-        JLabel line2 = label("lharia", 15f, Color.WHITE, Font.BOLD);
+        JLabel icon  = label("", 30f, UIConstants.COLOR_LOGIN_ACCENT_ICON, Font.PLAIN);
+        JLabel line1 = label("Serralharia", 15f, Color.WHITE, Font.BOLD);
+        JLabel line2 = label("", 15f, Color.WHITE, Font.BOLD);
 
         for (JLabel l : new JLabel[]{icon, line1, line2})
             l.setAlignmentX(CENTER_ALIGNMENT);
@@ -220,6 +220,10 @@ public class AppFrame extends JFrame {
             loginErroLabel.setText("Preenche todos os campos.");
             return;
         }
+        /*
+            TESTING PURPOSES ONLY
+            - AUTO AUTH
+         */
 
         if (authService.login(email, password)) {
             loginPasswordField.setText("");
