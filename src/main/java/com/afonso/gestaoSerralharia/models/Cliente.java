@@ -28,6 +28,9 @@ public class Cliente {
     @Column(name = "nporta", length = 10)
     private String nporta;
 
+    @Column(name = "email", length = 100)
+    private String email;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_codpostal")

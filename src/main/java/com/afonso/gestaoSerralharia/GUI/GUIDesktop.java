@@ -27,14 +27,15 @@ public class GUIDesktop {
                       TipolinhaorcamentoService tipolinhaorcamentoService,
                       GravidadeproblemaService gravidadeproblemaService,
                       EquipafuncionarioService equipafuncionarioService,
-                      EquipaService equipaService
+                      EquipaService equipaService,
+                      EstadopagamentoService estadopagamentoService
     ) {
         setupLookAndFeel();
         new AppFrame(authService, obraService, tarefaService, faturaService,
                 problemaService, clienteService, funcionarioService, cargoService,
                 estadoobraService, codpostalService, visitaService, orcamentoService,
                 linhaorcamentoService, taxaivaService, tipolinhaorcamentoService, gravidadeproblemaService,
-                equipafuncionarioService, equipaService);
+                equipafuncionarioService, equipaService, estadopagamentoService);
     }
 
     private void setupLookAndFeel() {

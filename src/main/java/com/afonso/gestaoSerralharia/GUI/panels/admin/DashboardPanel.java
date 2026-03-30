@@ -16,6 +16,7 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +29,10 @@ public class DashboardPanel extends BasePanel {
     private final ProblemaService    problemaService;
     private final ClienteService     clienteService;
     private final FuncionarioService funcionarioService;
+    private final OrcamentoService   orcamentoService;
+    private final VisitaService      visitaService;
 
+    // KPI labels
     private JLabel lblObrasValor;
     private JLabel lblObrasSubtitulo;
     private JLabel lblTarefasValor;
@@ -38,28 +42,35 @@ public class DashboardPanel extends BasePanel {
     private JLabel lblOrcamentosValor;
     private JLabel lblOrcamentosSubtitulo;
 
+    // Table badges
     private JLabel lblBadgeObras;
     private JLabel lblBadgeTarefas;
 
+    // Table models
     private DefaultTableModel modeloObras;
     private DefaultTableModel modeloTarefas;
 
+    // Bottom section panels
     private JPanel painelOrcamentos;
     private JPanel painelVisitas;
     private JPanel painelProblemas;
 
     private static final DateTimeFormatter FMT_DATA = DateTimeFormatter.ofPattern("dd/MM");
     private static final DateTimeFormatter FMT_FULL = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FMT_HORA = DateTimeFormatter.ofPattern("HH:mm");
 
     public DashboardPanel(ObraService obraService, TarefaService tarefaService,
                           FaturaService faturaService, ProblemaService problemaService,
-                          ClienteService clienteService, FuncionarioService funcionarioService) {
+                          ClienteService clienteService, FuncionarioService funcionarioService,
+                          OrcamentoService orcamentoService, VisitaService visitaService) {
         this.obraService        = obraService;
         this.tarefaService      = tarefaService;
         this.faturaService      = faturaService;
         this.problemaService    = problemaService;
         this.clienteService     = clienteService;
         this.funcionarioService = funcionarioService;
+        this.orcamentoService   = orcamentoService;
+        this.visitaService      = visitaService;
 
         String nome     = SessionManager.getInstance().getNome();
         String saudacao = saudacao() + (nome != null && !nome.isBlank() ? ", " + nome.split(" ")[0] : "");
@@ -71,6 +82,10 @@ public class DashboardPanel extends BasePanel {
         add(buildScroll(), BorderLayout.CENTER);
         carregar();
     }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Layout
+    // ─────────────────────────────────────────────────────────────
 
     private JScrollPane buildScroll() {
         JPanel corpo = new JPanel();
@@ -93,6 +108,10 @@ public class DashboardPanel extends BasePanel {
         return scroll;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  KPI cards (topo)
+    // ─────────────────────────────────────────────────────────────
+
     private JPanel buildSecaoKpi() {
         JPanel grid = new JPanel(new GridLayout(1, 4, 16, 0));
         grid.setOpaque(false);
@@ -108,10 +127,10 @@ public class DashboardPanel extends BasePanel {
         lblOrcamentosValor     = new JLabel("—");
         lblOrcamentosSubtitulo = new JLabel(" ");
 
-        grid.add(buildKpiCard("Obras em execução",    lblObrasValor,      lblObrasSubtitulo,      UIConstants.COLOR_INFO,    new Color(59, 130, 246)));
-        grid.add(buildKpiCard("Tarefas atrasadas",    lblTarefasValor,    lblTarefasSubtitulo,    UIConstants.COLOR_DANGER,  new Color(220, 38, 38)));
-        grid.add(buildKpiCard("Valor por receber",    lblFaturasValor,    lblFaturasSubtitulo,    UIConstants.COLOR_WARNING, new Color(217, 119, 6)));
-        grid.add(buildKpiCard("Orcamentos p/ aprovar", lblOrcamentosValor, lblOrcamentosSubtitulo, UIConstants.COLOR_WARNING, new Color(22, 163, 74)));
+        grid.add(buildKpiCard("Obras em execucao",     lblObrasValor,      lblObrasSubtitulo,      UIConstants.COLOR_INFO,    new Color(59, 130, 246)));
+        grid.add(buildKpiCard("Tarefas atrasadas",     lblTarefasValor,    lblTarefasSubtitulo,    UIConstants.COLOR_DANGER,  new Color(220, 38, 38)));
+        grid.add(buildKpiCard("Valor por receber",     lblFaturasValor,    lblFaturasSubtitulo,    UIConstants.COLOR_WARNING, new Color(217, 119, 6)));
+        grid.add(buildKpiCard("Orcamentos p/ aprovar", lblOrcamentosValor, lblOrcamentosSubtitulo, UIConstants.COLOR_SUCCESS, new Color(22, 163, 74)));
 
         return grid;
     }
@@ -152,6 +171,10 @@ public class DashboardPanel extends BasePanel {
         card.add(centro, BorderLayout.CENTER);
         return card;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Tabelas (meio)
+    // ─────────────────────────────────────────────────────────────
 
     private JPanel buildSecaoTabelas() {
         JPanel linha = new JPanel(new GridLayout(1, 2, 16, 0));
@@ -218,15 +241,19 @@ public class DashboardPanel extends BasePanel {
         return card;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  Seccao inferior: Orcamentos | Visitas | Problemas
+    // ─────────────────────────────────────────────────────────────
+
     private JPanel buildSecaoInferior() {
         JPanel linha = new JPanel(new GridLayout(1, 3, 16, 0));
         linha.setOpaque(false);
         linha.setAlignmentX(LEFT_ALIGNMENT);
         linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
 
-        painelOrcamentos = buildCardOrcamentos();
-        painelVisitas    = buildCardVisitas();
-        painelProblemas  = buildCardProblemas();
+        painelOrcamentos = buildCardComBadge("Orcamentos p/ aprovar", "listaOrcamentos", "— pendentes", UIConstants.COLOR_SUCCESS);
+        painelVisitas    = buildCardComBadge("Visitas hoje e amanha",  "listaVisitas",    "— hoje/amanha", UIConstants.COLOR_INFO);
+        painelProblemas  = buildCardComBadge("Problemas reportados",   "listaProblemas",  "— abertos",    UIConstants.COLOR_DANGER);
 
         linha.add(painelOrcamentos);
         linha.add(painelVisitas);
@@ -234,62 +261,33 @@ public class DashboardPanel extends BasePanel {
         return linha;
     }
 
-    private JPanel buildCardOrcamentos() {
-        JLabel badge = buildBadge("2 pendentes", UIConstants.COLOR_WARNING);
+    /** Cria um card com badge actualizavel, guardando o badge como client property */
+    private JPanel buildCardComBadge(String titulo, String listName, String badgeInicial, Color badgeCor) {
+        JLabel badge = buildBadge(badgeInicial, badgeCor);
 
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
-        header.add(cardTitulo("Orcamentos p/ aprovar"), BorderLayout.WEST);
+        header.add(cardTitulo(titulo), BorderLayout.WEST);
         header.add(badge, BorderLayout.EAST);
 
-        JPanel lista = listaPanel("listaOrcamentos");
+        JPanel lista = listaPanel(listName);
 
-        return buildCard(header, lista);
-    }
-
-    private JPanel buildCardVisitas() {
-        JPanel lista = listaPanel("listaVisitas");
-        return buildCard(cardTitulo("Visitas hoje e amanha"), lista);
-    }
-
-    private JPanel buildCardProblemas() {
-        JLabel badge = buildBadge("1 critico", UIConstants.COLOR_DANGER);
-
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        header.add(cardTitulo("Problemas reportados"), BorderLayout.WEST);
-        header.add(badge, BorderLayout.EAST);
-
-        JPanel lista = listaPanel("listaProblemas");
-
-        return buildCard(header, lista);
-    }
-
-    private JPanel buildCard(JComponent north, JPanel center) {
         JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setOpaque(true);
         card.setBackground(UIManager.getColor("Panel.background"));
         card.setBorder(new CompoundBorder(
                 new LineBorder(borderColor(), 1, true),
                 new EmptyBorder(16, 18, 16, 18)));
-        card.add(north,  BorderLayout.NORTH);
-        card.add(center, BorderLayout.CENTER);
+        card.add(header, BorderLayout.NORTH);
+        card.add(lista,  BorderLayout.CENTER);
+        // Guardar referencia ao badge para actualizacoes simples
+        card.putClientProperty("badge", badge);
         return card;
     }
 
-    private JLabel cardTitulo(String texto) {
-        JLabel lbl = new JLabel(texto);
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 13f));
-        return lbl;
-    }
-
-    private JPanel listaPanel(String name) {
-        JPanel lista = new JPanel();
-        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-        lista.setOpaque(false);
-        lista.setName(name);
-        return lista;
-    }
+    // ─────────────────────────────────────────────────────────────
+    //  Carregamento de dados
+    // ─────────────────────────────────────────────────────────────
 
     private void carregar() {
         carregarKpis();
@@ -301,13 +299,15 @@ public class DashboardPanel extends BasePanel {
     }
 
     private void carregarKpis() {
+        // Obras em execucao
         List<Obra> emExec = obraService.listarTodos().stream()
                 .filter(o -> o.getIdEstadoObra() != null &&
                         o.getIdEstadoObra().getNomeEstado().toLowerCase().contains("execu"))
                 .collect(Collectors.toList());
         lblObrasValor.setText(String.valueOf(emExec.size()));
-        lblObrasSubtitulo.setText(" ");
+        lblObrasSubtitulo.setText(emExec.isEmpty() ? " " : emExec.size() + " obras ativas");
 
+        // Tarefas atrasadas
         List<Tarefa> atrasadas = tarefaService.buscarAtrasadas().stream()
                 .filter(t -> {
                     if (t.getIdEstadoTarefa() == null) return true;
@@ -316,27 +316,30 @@ public class DashboardPanel extends BasePanel {
                 })
                 .collect(Collectors.toList());
         lblTarefasValor.setText(String.valueOf(atrasadas.size()));
-        lblTarefasSubtitulo.setText(atrasadas.isEmpty() ? " " : atrasadas.size() + " tarefas em atraso");
+        lblTarefasSubtitulo.setText(atrasadas.isEmpty() ? " " : atrasadas.size() + " tarefa(s) em atraso");
 
-        List<Fatura> pendentes = faturaService.listarTodos().stream()
+        // Valor por receber (faturas)
+        List<Fatura> faturasPendentes = faturaService.listarTodos().stream()
                 .filter(f -> f.getValorTotalComIva() != null && f.getValorPago() != null
                         && f.getValorPago().compareTo(f.getValorTotalComIva()) < 0)
                 .collect(Collectors.toList());
-
-        BigDecimal totalPorReceber = pendentes.stream()
+        BigDecimal totalPorReceber = faturasPendentes.stream()
                 .map(f -> f.getValorTotalComIva().subtract(f.getValorPago()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         long valorLong = totalPorReceber.longValue();
         String valorStr = valorLong >= 1000
                 ? "€ " + String.format("%,d", valorLong).replace(",", ".")
                 : "€ " + valorLong;
         lblFaturasValor.setText(valorStr);
-        lblFaturasSubtitulo.setText(pendentes.size() + " faturas pendentes");
+        lblFaturasSubtitulo.setText(faturasPendentes.size() + " fatura(s) pendente(s)");
 
-        long orcPendentes = pendentes.size();
-        lblOrcamentosValor.setText(String.valueOf(orcPendentes > 9 ? "9+" : orcPendentes));
-        lblOrcamentosSubtitulo.setText("aguardam aprovacao");
+        // Orcamentos por aprovar (corrigido: usa OrcamentoService)
+        List<Orcamento> orcPorAprovar = orcamentoService.listarTodos().stream()
+                .filter(o -> o.getAprovado() != null && !o.getAprovado())
+                .collect(Collectors.toList());
+        int qtdOrc = orcPorAprovar.size();
+        lblOrcamentosValor.setText(qtdOrc > 9 ? "9+" : String.valueOf(qtdOrc));
+        lblOrcamentosSubtitulo.setText(qtdOrc == 0 ? "nenhum pendente" : qtdOrc + " aguardam aprovacao");
     }
 
     private void carregarTabelaObras() {
@@ -384,22 +387,25 @@ public class DashboardPanel extends BasePanel {
             modeloTarefas.addRow(new Object[]{"Sem tarefas atrasadas", "", ""});
     }
 
+    /** Orcamentos ainda nao aprovados — corrigido: usa OrcamentoService, nao FaturaService */
     private void carregarOrcamentos() {
         JPanel lista = findNamed(painelOrcamentos, "listaOrcamentos");
         if (lista == null) return;
         lista.removeAll();
 
-        List<Fatura> pendentes = faturaService.listarTodos().stream()
-                .filter(f -> f.getValorTotalComIva() != null && f.getValorPago() != null
-                        && f.getValorPago().compareTo(f.getValorTotalComIva()) < 0)
-                .limit(3)
+        List<Orcamento> pendentes = orcamentoService.listarTodos().stream()
+                .filter(o -> o.getAprovado() != null && !o.getAprovado())
+                .limit(4)
                 .collect(Collectors.toList());
 
+        atualizarBadge(painelOrcamentos,
+                pendentes.isEmpty() ? "0 pendentes" : pendentes.size() + " pendente(s)");
+
         if (pendentes.isEmpty()) {
-            lista.add(labelVazio("Sem orcamentos pendentes"));
+            lista.add(labelVazio("Sem orcamentos por aprovar"));
         } else {
-            for (Fatura f : pendentes) {
-                lista.add(buildLinhaOrcamento(f));
+            for (Orcamento o : pendentes) {
+                lista.add(buildLinhaOrcamento(o));
                 lista.add(Box.createVerticalStrut(10));
             }
         }
@@ -408,11 +414,11 @@ public class DashboardPanel extends BasePanel {
         lista.repaint();
     }
 
-    private JPanel buildLinhaOrcamento(Fatura f) {
-        String titulo = f.getIdObra() != null && f.getIdObra().getDescricao() != null
-                ? truncar(f.getIdObra().getDescricao(), 28) : "Fatura #" + f.getId();
+    private JPanel buildLinhaOrcamento(Orcamento o) {
+        String tituloObra = (o.getIdObra() != null && o.getIdObra().getDescricao() != null)
+                ? truncar(o.getIdObra().getDescricao(), 28) : "Orcamento #" + o.getId();
         String sub = "emitido em " +
-                (f.getDataEmissao() != null ? f.getDataEmissao().format(FMT_FULL) : "—");
+                (o.getDataEmissao() != null ? o.getDataEmissao().format(FMT_FULL) : "—");
 
         JButton btnVer = buildSmallButton("Ver");
         btnVer.setPreferredSize(new Dimension(56, 36));
@@ -421,33 +427,38 @@ public class DashboardPanel extends BasePanel {
         linha.setOpaque(false);
         linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
         linha.setAlignmentX(LEFT_ALIGNMENT);
-        linha.add(buildTexto(titulo, sub), BorderLayout.CENTER);
-        linha.add(btnVer,                 BorderLayout.EAST);
+        linha.add(buildTexto(tituloObra, sub), BorderLayout.CENTER);
+        linha.add(btnVer,                      BorderLayout.EAST);
         return linha;
     }
 
+    /** Visitas para hoje e amanha, usando VisitaService */
     private void carregarVisitas() {
         JPanel lista = findNamed(painelVisitas, "listaVisitas");
         if (lista == null) return;
         lista.removeAll();
 
-        List<Obra> obras = obraService.listarTodos().stream()
-                .filter(o -> o.getIdEstadoObra() != null &&
-                        o.getIdEstadoObra().getNomeEstado().toLowerCase().contains("execu"))
-                .limit(4)
+        LocalDate hoje   = LocalDate.now();
+        LocalDate amanha = hoje.plusDays(1);
+
+        List<Visita> visitasProximas = visitaService.listarTodos().stream()
+                .filter(v -> {
+                    if (v.getDataVisita() == null) return false;
+                    LocalDate dv = v.getDataVisita().atZone(ZoneId.systemDefault()).toLocalDate();
+                    return dv.equals(hoje) || dv.equals(amanha);
+                })
+                .sorted((a, b) -> a.getDataVisita().compareTo(b.getDataVisita()))
+                .limit(5)
                 .collect(Collectors.toList());
 
-        if (obras.isEmpty()) {
-            lista.add(labelVazio("Sem visitas agendadas"));
-        } else {
-            String[] horas = {"09:00", "14:30", "10:00", "11:00"};
-            String[] dias  = {"hoje", "hoje", "amanha", "amanha"};
-            Color[]  cores = {UIConstants.COLOR_INFO, UIConstants.COLOR_INFO,
-                    new Color(150, 150, 150), UIConstants.COLOR_SUCCESS};
+        atualizarBadge(painelVisitas,
+                visitasProximas.isEmpty() ? "0 hoje/amanha" : visitasProximas.size() + " agendada(s)");
 
-            for (int i = 0; i < obras.size(); i++) {
-                lista.add(buildLinhaVisita(obras.get(i), horas[i % horas.length],
-                        dias[i % dias.length], cores[i % cores.length]));
+        if (visitasProximas.isEmpty()) {
+            lista.add(labelVazio("Sem visitas para hoje ou amanha"));
+        } else {
+            for (Visita v : visitasProximas) {
+                lista.add(buildLinhaVisita(v, hoje));
                 lista.add(separador());
             }
         }
@@ -456,9 +467,18 @@ public class DashboardPanel extends BasePanel {
         lista.repaint();
     }
 
-    private JPanel buildLinhaVisita(Obra o, String hora, String dia, Color corDot) {
-        String titulo  = o.getDescricao() != null ? truncar(o.getDescricao(), 30) : "#" + o.getId();
-        String cliente = o.getIdCliente() != null ? o.getIdCliente().getNome() : "—";
+    private JPanel buildLinhaVisita(Visita v, LocalDate hoje) {
+        LocalDate dv     = v.getDataVisita().atZone(ZoneId.systemDefault()).toLocalDate();
+        boolean   isHoje = dv.equals(hoje);
+
+        String hora     = FMT_HORA.format(v.getDataVisita().atZone(ZoneId.systemDefault()).toLocalTime());
+        String diaLabel = isHoje ? "hoje" : "amanha";
+        Color  corDot   = isHoje ? UIConstants.COLOR_INFO : new Color(150, 150, 150);
+
+        String titulo  = (v.getIdObra() != null && v.getIdObra().getDescricao() != null)
+                ? truncar(v.getIdObra().getDescricao(), 30) : "Visita #" + v.getId();
+        String cliente = (v.getIdObra() != null && v.getIdObra().getIdCliente() != null)
+                ? v.getIdObra().getIdCliente().getNome() : "—";
 
         JLabel dot = new JLabel("●");
         dot.setForeground(corDot);
@@ -474,9 +494,9 @@ public class DashboardPanel extends BasePanel {
         linha.setOpaque(false);
         linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
         linha.setAlignmentX(LEFT_ALIGNMENT);
-        linha.add(dot,                           BorderLayout.WEST);
-        linha.add(buildTexto(titulo, cliente + " · " + dia), BorderLayout.CENTER);
-        linha.add(lblHora,                       BorderLayout.EAST);
+        linha.add(dot,                                          BorderLayout.WEST);
+        linha.add(buildTexto(titulo, cliente + " · " + diaLabel), BorderLayout.CENTER);
+        linha.add(lblHora,                                      BorderLayout.EAST);
         return linha;
     }
 
@@ -489,17 +509,15 @@ public class DashboardPanel extends BasePanel {
                 .limit(4)
                 .collect(Collectors.toList());
 
-        JPanel header = (JPanel) painelProblemas.getComponent(0);
         long criticos = problemas.stream()
                 .filter(p -> p.getIdGravidade() != null &&
                         p.getIdGravidade().getNomeGravidade().toLowerCase().contains("crit"))
                 .count();
-        if (header.getComponentCount() > 1 && header.getComponent(1) instanceof JLabel) {
-            JLabel badge = (JLabel) header.getComponent(1);
-            badge.setText(criticos > 0
-                    ? criticos + " critico" + (criticos > 1 ? "s" : "")
-                    : problemas.size() + " abertos");
-        }
+
+        String badgeTexto = criticos > 0
+                ? criticos + " critico" + (criticos > 1 ? "s" : "")
+                : problemas.size() + " aberto" + (problemas.size() != 1 ? "s" : "");
+        atualizarBadge(painelProblemas, badgeTexto);
 
         if (problemas.isEmpty()) {
             lista.add(labelVazio("Sem problemas reportados"));
@@ -529,6 +547,24 @@ public class DashboardPanel extends BasePanel {
         linha.add(buildTexto(descricao, obraDesc), BorderLayout.CENTER);
         linha.add(badge,                           BorderLayout.EAST);
         return linha;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Utilitarios de UI
+    // ─────────────────────────────────────────────────────────────
+
+    private JLabel cardTitulo(String texto) {
+        JLabel lbl = new JLabel(texto);
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 13f));
+        return lbl;
+    }
+
+    private JPanel listaPanel(String name) {
+        JPanel lista = new JPanel();
+        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
+        lista.setOpaque(false);
+        lista.setName(name);
+        return lista;
     }
 
     private JPanel buildTexto(String linha1, String linha2) {
@@ -579,6 +615,14 @@ public class DashboardPanel extends BasePanel {
         badge.setBorder(new EmptyBorder(2, 8, 2, 8));
         badge.setHorizontalAlignment(SwingConstants.CENTER);
         return badge;
+    }
+
+    /** Actualiza o texto do badge guardado como client property no card */
+    private void atualizarBadge(JPanel card, String texto) {
+        Object prop = card.getClientProperty("badge");
+        if (prop instanceof JLabel) {
+            ((JLabel) prop).setText(texto);
+        }
     }
 
     private JPanel separador() {

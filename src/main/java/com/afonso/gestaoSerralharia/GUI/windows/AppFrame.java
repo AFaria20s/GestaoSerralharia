@@ -58,6 +58,7 @@ public class AppFrame extends JFrame {
     private final GravidadeproblemaService gravidadeService;
     private final EquipafuncionarioService equipafuncionarioService;
     private final EquipaService equipaService;
+    private final EstadopagamentoService estadoPagamentoService;
 
     public AppFrame(AuthService authService,
                     ObraService obraService,
@@ -76,7 +77,8 @@ public class AppFrame extends JFrame {
                     TipolinhaorcamentoService tipolinhaorcamentoService,
                     GravidadeproblemaService gravidadeService,
                     EquipafuncionarioService equipafuncionarioService,
-                    EquipaService equipaService
+                    EquipaService equipaService,
+                    EstadopagamentoService estadoPagamentoService
     ) {
         this.authService                = authService;
         this.obraService                = obraService;
@@ -96,6 +98,7 @@ public class AppFrame extends JFrame {
         this.gravidadeService           = gravidadeService;
         this.equipafuncionarioService   = equipafuncionarioService;
         this.equipaService              = equipaService;
+        this.estadoPagamentoService     = estadoPagamentoService;
 
 
         setTitle("Serralharia");
@@ -433,7 +436,8 @@ public class AppFrame extends JFrame {
     private void registerAdminPanels() {
         addAdminPanel("dashboard",    new DashboardPanel(
                 obraService, tarefaService, faturaService,
-                problemaService, clienteService, funcionarioService));
+                problemaService, clienteService, funcionarioService,
+                orcamentoService, visitaService));
         addAdminPanel("obras",        new ObrasPanel(
                 obraService, clienteService, estadoObraService,
                 visitaService, orcamentoService, codPostalService,
@@ -452,9 +456,9 @@ public class AppFrame extends JFrame {
                 equipaService, equipafuncionarioService,
                 obraService, funcionarioService, tarefaService));
         addAdminPanel("tarefas",      new TarefasAdminPanel());
-        addAdminPanel("clientes",     new ClientesPanel());
+        addAdminPanel("clientes",     new ClientesPanel(clienteService, codPostalService));
         addAdminPanel("stock",        new StockPanel());
-        addAdminPanel("faturacao",    new FaturacaoPanel());
+        addAdminPanel("faturacao",    new FaturacaoPanel(faturaService, obraService, orcamentoService, linhaorcamentoService, estadoPagamentoService));
     }
 
     private void registerFuncPanels() {

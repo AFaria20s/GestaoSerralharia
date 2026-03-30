@@ -20,12 +20,12 @@ public class Fatura {
     @Column(name = "id_fatura", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_obra")
     private Obra idObra;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_estado_pagamento")
     private Estadopagamento idEstadoPagamento;
 
