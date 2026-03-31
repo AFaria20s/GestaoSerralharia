@@ -14,31 +14,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Painel de gestão de equipas (RF11 — criar, remover, atualizar equipas e associá-las a obras).
- *
- * Funcionalidades:
- *  • Listar todas as equipas com obra, membros e estado (ativa/inativa)
- *  • Filtrar por equipas ativas / todas
- *  • Pesquisar por nome em tempo real
- *  • Criar nova equipa (nome, obra, funcionários)
- *  • Ver detalhe da equipa: membros + tarefas associadas à obra (double-click)
- *  • Gerir membros: adicionar / remover funcionários
- *  • Ativar / desativar equipa
- *  • Eliminar equipa (com confirmação)
- *
- * Regras de negócio (via EquipaService):
- *  – Só é possível criar equipas em obras com orçamento aprovado
- *  – Nome obrigatório
- *  – Obra obrigatória
- *
- * Integra com:
- *  – EquipaService              (CRUD de equipas)
- *  – EquipafuncionarioService   (associação equipa ↔ funcionário)
- *  – ObraService                (lista de obras disponíveis)
- *  – FuncionarioService         (lista de funcionários)
- *  – TarefaService              (tarefas da obra, para mostrar no detalhe)
- */
 public class EquipasPanel extends BasePanel {
 
     // ── Serviços ──────────────────────────────────────────────────────────────
@@ -296,7 +271,6 @@ public class EquipasPanel extends BasePanel {
         // Nome
         JTextField campoNome = new JTextField();
 
-        // Obra — só obras com orçamento aprovado (o service valida, mas filtramos visualmente)
         List<Obra> obras = obraService.listarTodos();
         JComboBox<Obra> comboObra = new JComboBox<>(obras.toArray(new Obra[0]));
         comboObra.setRenderer(new DefaultListCellRenderer() {
@@ -394,7 +368,7 @@ public class EquipasPanel extends BasePanel {
         rodape.setOpaque(false);
         rodape.setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        JButton btnMembros = buildSmallButton("👥 Gerir Membros");
+        JButton btnMembros = buildSmallButton("Gerir Membros");
         JButton btnToggle  = buildSmallButton(Boolean.TRUE.equals(eq.getAtiva()) ? "⏸ Desativar" : "▶ Ativar");
         JButton btnFechar  = buildSmallButton("Fechar");
 
@@ -587,7 +561,7 @@ public class EquipasPanel extends BasePanel {
         lblErroAdd.setForeground(UIConstants.COLOR_DANGER);
         lblErroAdd.setFont(lblErroAdd.getFont().deriveFont(UIConstants.FONT_SMALL));
 
-        JButton btnAdicionar = buildButton("+ Adicionar");
+        JButton btnAdicionar = buildButton("Adicionar");
         btnAdicionar.setBackground(UIConstants.COLOR_ADMIN_ACCENT);
         btnAdicionar.setForeground(Color.WHITE);
         btnAdicionar.addActionListener(e -> {

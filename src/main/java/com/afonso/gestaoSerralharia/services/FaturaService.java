@@ -35,7 +35,7 @@ public class FaturaService {
     }
 
     public List<Fatura> buscarPorObra(Obra obra) {
-        return faturaRepository.findByIdObra(obra);
+        return faturaRepository.findByIdObraOrderByNumeroParcelaAsc(obra);
     }
 
     /**
@@ -43,39 +43,38 @@ public class FaturaService {
      * O valor total é calculado automaticamente pelas linhas do orçamento.
      */
     public Fatura emitir(Obra obra) {
+        Orcamento orcamento = orcamentoAprovado(obra);
+        BigDecimal restante = saldoPorFaturar(obra, orcamento);
+        return emitir(obra, restante, "Faturação total");
+    }
+
+    public Fatura emitir(Obra obra, BigDecimal valor, String descricao) {
         if (obra == null)
             throw new IllegalArgumentException("A obra é obrigatória.");
 
-        if (!faturaRepository.findByIdObra(obra).isEmpty())
-            throw new IllegalStateException("Esta obra já tem uma fatura emitida.");
-
-        Orcamento orcamento = orcamentoRepository.findByIdObra(obra)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Esta obra não tem orçamento. Cria e aprova um orçamento primeiro."));
-
-        if (!orcamento.getAprovado())
-            throw new IllegalStateException(
-                    "O orçamento desta obra ainda não foi aprovado. Aprova-o antes de emitir a fatura.");
-
+        Orcamento orcamento = orcamentoAprovado(obra);
         List<Linhaorcamento> linhas = linhaorcamentoRepository.findByIdOrcamento(orcamento);
         if (linhas.isEmpty())
             throw new IllegalStateException("O orçamento não tem linhas. Adiciona artigos antes de faturar.");
 
-        BigDecimal totalComIva = linhas.stream()
-                .map(l -> {
-                    BigDecimal subtotal = l.getPrecoUnit().multiply(l.getQuantidade());
-                    BigDecimal iva = l.getIvaPercentagemAplicada()
-                            .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-                    return subtotal.multiply(BigDecimal.ONE.add(iva));
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal restante = saldoPorFaturar(obra, orcamento);
+        if (restante.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalStateException("O valor do orçamento aprovado já foi totalmente faturado.");
+        if (valor == null || valor.signum() <= 0)
+            throw new IllegalArgumentException("O valor da fatura tem de ser maior que zero.");
+        if (valor.compareTo(restante) > 0)
+            throw new IllegalArgumentException("O valor da fatura não pode exceder o valor ainda por faturar.");
 
         Fatura fatura = new Fatura();
         fatura.setIdObra(obra);
-        fatura.setValorTotalComIva(totalComIva);
+        fatura.setIdOrcamento(orcamento);
+        fatura.setValorTotalComIva(valor.setScale(2, RoundingMode.HALF_UP));
         fatura.setValorPago(BigDecimal.ZERO);
         fatura.setDataEmissao(LocalDate.now());
+        fatura.setNumeroParcela(buscarPorObra(obra).size() + 1);
+        fatura.setDescricao(descricao == null || descricao.isBlank()
+                ? "Parcela " + fatura.getNumeroParcela()
+                : descricao.trim());
 
         estadopagamentoRepository.findByNomeEstadoIgnoreCase("Pendente")
                 .ifPresent(fatura::setIdEstadoPagamento);
@@ -107,10 +106,45 @@ public class FaturaService {
         return faturaRepository.save(fatura);
     }
 
+    public BigDecimal totalFaturado(Obra obra) {
+        return buscarPorObra(obra).stream()
+                .map(Fatura::getValorTotalComIva)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal saldoPorFaturar(Obra obra, Orcamento orcamento) {
+        BigDecimal totalOrcamento = totalOrcamentoComIva(orcamento);
+        BigDecimal totalJaFaturado = totalFaturado(obra);
+        BigDecimal saldo = totalOrcamento.subtract(totalJaFaturado);
+        return saldo.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+
     public void eliminar(Integer id) {
         Fatura fatura = buscarPorId(id);
         if (fatura.getValorPago().compareTo(BigDecimal.ZERO) > 0)
             throw new IllegalStateException("Não é possível eliminar uma fatura com pagamentos registados.");
         faturaRepository.deleteById(id);
+    }
+
+    private Orcamento orcamentoAprovado(Obra obra) {
+        Orcamento orcamento = orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(obra)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Esta obra não tem um orçamento aprovado. Aprova um orçamento antes de faturar."));
+        if (!Boolean.TRUE.equals(orcamento.getAprovado()))
+            throw new IllegalStateException("O orçamento desta obra ainda não foi aprovado.");
+        return orcamento;
+    }
+
+    private BigDecimal totalOrcamentoComIva(Orcamento orcamento) {
+        return linhaorcamentoRepository.findByIdOrcamento(orcamento).stream()
+                .map(l -> {
+                    BigDecimal subtotal = l.getPrecoUnit().multiply(l.getQuantidade());
+                    BigDecimal iva = l.getIvaPercentagemAplicada()
+                            .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+                    return subtotal.multiply(BigDecimal.ONE.add(iva));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

@@ -34,7 +34,7 @@ public class VisitaService {
             throw new IllegalArgumentException("A visita tem de estar associada a uma obra");
         if (visita.getDataVisita() == null)
             throw new IllegalArgumentException("A data da visita é obrigatória");
-        boolean orcamentoAprovado = orcamentoRepository.findByIdObra(visita.getIdObra())
+        boolean orcamentoAprovado = orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(visita.getIdObra())
                 .map(o -> o.getAprovado()).orElse(false);
         if (orcamentoAprovado)
             throw new IllegalStateException("Não é possível registar visitas numa obra com orçamento já aprovado");

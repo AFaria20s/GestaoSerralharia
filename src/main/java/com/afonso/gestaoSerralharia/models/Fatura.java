@@ -29,6 +29,10 @@ public class Fatura {
     @JoinColumn(name = "id_estado_pagamento")
     private Estadopagamento idEstadoPagamento;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_orcamento")
+    private Orcamento idOrcamento;
+
     @ColumnDefault("CURRENT_DATE")
     @Column(name = "data_emissao", nullable = false)
     private LocalDate dataEmissao;
@@ -40,5 +44,11 @@ public class Fatura {
     @Column(name = "valor_pago", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorPago;
 
+    @Column(name = "descricao", length = 150)
+    private String descricao;
+
+    @ColumnDefault("1")
+    @Column(name = "numero_parcela", nullable = false)
+    private Integer numeroParcela;
 
 }

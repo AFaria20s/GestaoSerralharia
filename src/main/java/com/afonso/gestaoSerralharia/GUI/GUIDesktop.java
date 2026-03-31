@@ -1,7 +1,5 @@
 package com.afonso.gestaoSerralharia.GUI;
 
-import com.afonso.gestaoSerralharia.GUI.themes.ThemeType;
-import com.afonso.gestaoSerralharia.GUI.utils.AppConfig;
 import com.afonso.gestaoSerralharia.GUI.windows.AppFrame;
 import com.afonso.gestaoSerralharia.services.*;
 import com.formdev.flatlaf.FlatLightLaf;
@@ -16,6 +14,7 @@ public class GUIDesktop {
                       FaturaService faturaService,
                       ProblemaService problemaService,
                       ClienteService clienteService,
+                      DonoService donoService,
                       FuncionarioService funcionarioService,
                       CargoService cargoService,
                       EstadoobraService estadoobraService,
@@ -28,21 +27,26 @@ public class GUIDesktop {
                       GravidadeproblemaService gravidadeproblemaService,
                       EquipafuncionarioService equipafuncionarioService,
                       EquipaService equipaService,
-                      EstadopagamentoService estadopagamentoService
+                      EstadopagamentoService estadopagamentoService,
+                      MaterialService materialService,
+                      FornecedorService fornecedorService,
+                      EncomendaService encomendaService,
+                      LinhaencomendaService linhaEncomendaService,
+                      EstadotarefaService estadotarefaService
     ) {
         setupLookAndFeel();
         new AppFrame(authService, obraService, tarefaService, faturaService,
-                problemaService, clienteService, funcionarioService, cargoService,
+                problemaService, clienteService, donoService, funcionarioService, cargoService,
                 estadoobraService, codpostalService, visitaService, orcamentoService,
                 linhaorcamentoService, taxaivaService, tipolinhaorcamentoService, gravidadeproblemaService,
-                equipafuncionarioService, equipaService, estadopagamentoService);
+                equipafuncionarioService, equipaService, estadopagamentoService,
+                materialService, fornecedorService, encomendaService, linhaEncomendaService,
+                estadotarefaService);
     }
 
     private void setupLookAndFeel() {
         try {
-            ThemeType theme = AppConfig.getInstance().getTheme();
-            if (theme == ThemeType.LIGHT)
-                UIManager.setLookAndFeel(new FlatLightLaf());
+            UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception ex) {
             ex.printStackTrace();
         }

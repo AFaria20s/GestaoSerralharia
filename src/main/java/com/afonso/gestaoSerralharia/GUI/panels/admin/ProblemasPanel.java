@@ -77,7 +77,7 @@ public class ProblemasPanel extends BasePanel {
         acoes.add(btnEliminar);
 
         return buildHeader("Problemas",
-                "Problemas reportados em obras em execução · RF05",
+                "",
                 acoes);
     }
 

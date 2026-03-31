@@ -23,18 +23,20 @@ public abstract class BasePanel extends JPanel {
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(0, 0, UIConstants.HEADER_MARGIN_BOTTOM, 0));
 
-        JPanel left = new JPanel(new GridLayout(2, 1, 0, 3));
+        boolean temSubtitulo = subtitulo != null && !subtitulo.isBlank();
+        JPanel left = new JPanel(new GridLayout(temSubtitulo ? 2 : 1, 1, 0, 3));
         left.setOpaque(false);
 
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, UIConstants.FONT_PANEL_TITLE));
-
-        JLabel lblSub = new JLabel(subtitulo);
-        lblSub.setFont(lblSub.getFont().deriveFont(UIConstants.FONT_PANEL_SUB));
-        lblSub.setForeground(UIManager.getColor("Label.disabledForeground"));
-
         left.add(lblTitulo);
-        left.add(lblSub);
+
+        if (temSubtitulo) {
+            JLabel lblSub = new JLabel(subtitulo);
+            lblSub.setFont(lblSub.getFont().deriveFont(UIConstants.FONT_PANEL_SUB));
+            lblSub.setForeground(UIManager.getColor("Label.disabledForeground"));
+            left.add(lblSub);
+        }
         header.add(left, BorderLayout.WEST);
         if (acaoDireita != null) header.add(acaoDireita, BorderLayout.EAST);
 

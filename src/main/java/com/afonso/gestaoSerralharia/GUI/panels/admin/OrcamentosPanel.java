@@ -27,6 +27,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
@@ -46,12 +47,15 @@ public class OrcamentosPanel extends BasePanel {
     private final TaxaivaService            taxaivaService;
     private final TipolinhaorcamentoService tipoService;
 
-    private static final String[] COLUNAS = {"ID", "Obra", "Cliente", "Data", "Total s/IVA", "Total c/IVA", "Estado"};
+    private static final String[] COLUNAS = {"ID", "Obra", "Cliente", "Versão", "Data", "Total s/IVA", "Total c/IVA", "Estado", "Registo"};
 
     private DefaultTableModel modelo;
     private JTable            tabela;
     private JTextField        campoPesquisa;
     private JComboBox<String> filtroEstado;
+    private JComboBox<String> filtroVersao;
+    private JComboBox<String> filtroData;
+    private JLabel            lblResumo;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -87,7 +91,7 @@ public class OrcamentosPanel extends BasePanel {
         btnNovo.setFocusPainted(false);
         btnNovo.addActionListener(e -> abrirDialogoNovo());
 
-        add(buildHeader("Orçamentos", "RF04 · RF05 · RF19 — elaborar, aprovar e exportar orçamentos", btnNovo),
+        add(buildHeader("Orçamentos", "", btnNovo),
                 BorderLayout.NORTH);
         add(buildCorpo(), BorderLayout.CENTER);
 
@@ -104,7 +108,7 @@ public class OrcamentosPanel extends BasePanel {
     }
 
     private JPanel buildBarraFiltros() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel bar = new JPanel(new BorderLayout(12, 0));
         bar.setOpaque(false);
 
         campoPesquisa = buildSearchField("Pesquisar por obra ou cliente…");
@@ -118,8 +122,37 @@ public class OrcamentosPanel extends BasePanel {
         filtroEstado.setPreferredSize(new Dimension(130, UIConstants.SEARCH_FIELD_HEIGHT));
         filtroEstado.addActionListener(e -> carregarTabela());
 
-        bar.add(campoPesquisa);
-        bar.add(filtroEstado);
+        filtroVersao = new JComboBox<>(new String[]{"Todas", "Só ativa", "Só histórico"});
+        filtroVersao.setPreferredSize(new Dimension(130, UIConstants.SEARCH_FIELD_HEIGHT));
+        filtroVersao.addActionListener(e -> carregarTabela());
+
+        filtroData = new JComboBox<>(new String[]{"Qualquer data", "Últimos 30 dias", "Este ano"});
+        filtroData.setPreferredSize(new Dimension(150, UIConstants.SEARCH_FIELD_HEIGHT));
+        filtroData.addActionListener(e -> carregarTabela());
+
+        JButton btnLimpar = buildSmallButton("Limpar");
+        btnLimpar.addActionListener(e -> {
+            campoPesquisa.setText("");
+            filtroEstado.setSelectedIndex(0);
+            filtroVersao.setSelectedIndex(0);
+            filtroData.setSelectedIndex(0);
+            carregarTabela();
+        });
+
+        lblResumo = new JLabel("0 orçamentos");
+        lblResumo.setFont(lblResumo.getFont().deriveFont(Font.PLAIN, 12f));
+        lblResumo.setForeground(UIManager.getColor("Label.disabledForeground"));
+
+        JPanel esq = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        esq.setOpaque(false);
+        esq.add(campoPesquisa);
+        esq.add(filtroEstado);
+        esq.add(filtroVersao);
+        esq.add(filtroData);
+        esq.add(btnLimpar);
+        esq.add(lblResumo);
+
+        bar.add(esq, BorderLayout.WEST);
         return bar;
     }
 
@@ -139,12 +172,16 @@ public class OrcamentosPanel extends BasePanel {
         tabela.getColumnModel().getColumn(0).setMinWidth(0);
         tabela.getColumnModel().getColumn(0).setMaxWidth(0);
         tabela.getColumnModel().getColumn(0).setWidth(0);
-        tabela.getColumnModel().getColumn(1).setPreferredWidth(200);
-        tabela.getColumnModel().getColumn(2).setPreferredWidth(160);
-        tabela.getColumnModel().getColumn(3).setPreferredWidth(90);
-        tabela.getColumnModel().getColumn(4).setPreferredWidth(110);
-        tabela.getColumnModel().getColumn(5).setPreferredWidth(110);
-        tabela.getColumnModel().getColumn(6).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tabela.getColumnModel().getColumn(2).setPreferredWidth(145);
+        tabela.getColumnModel().getColumn(3).setPreferredWidth(65);
+        tabela.getColumnModel().getColumn(4).setPreferredWidth(85);
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(105);
+        tabela.getColumnModel().getColumn(6).setPreferredWidth(105);
+        tabela.getColumnModel().getColumn(7).setPreferredWidth(95);
+        tabela.getColumnModel().getColumn(8).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(7).setCellRenderer(new EstadoOrcamentoRenderer());
+        tabela.getColumnModel().getColumn(8).setCellRenderer(new RegistoRenderer());
 
         tabela.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -161,20 +198,24 @@ public class OrcamentosPanel extends BasePanel {
 
         JButton btnVer      = buildSmallButton("Ver / Editar");
         JButton btnAprovar  = buildSmallButton("Aprovar");
+        JButton btnRevisao  = buildSmallButton("Criar revisão");
         JButton btnExportar = buildSmallButton("Exportar PDF");
         JButton btnEliminar = buildSmallButton("Eliminar");
 
         btnAprovar.setForeground(UIConstants.COLOR_SUCCESS);
+        btnRevisao.setForeground(UIConstants.COLOR_WARNING);
         btnExportar.setForeground(UIConstants.COLOR_INFO);
         btnEliminar.setForeground(UIConstants.COLOR_DANGER);
 
         btnVer.addActionListener(e -> abrirDialogoEditar());
         btnAprovar.addActionListener(e -> aprovarSelecionado());
+        btnRevisao.addActionListener(e -> criarRevisaoSelecionada());
         btnExportar.addActionListener(e -> exportarPDFSelecionado());
         btnEliminar.addActionListener(e -> eliminarSelecionado());
 
         bar.add(btnVer);
         bar.add(btnAprovar);
+        bar.add(btnRevisao);
         bar.add(btnExportar);
         bar.add(btnEliminar);
 
@@ -189,6 +230,9 @@ public class OrcamentosPanel extends BasePanel {
         modelo.setRowCount(0);
         String filtro = campoPesquisa != null ? campoPesquisa.getText().trim().toLowerCase() : "";
         String estado = filtroEstado  != null ? (String) filtroEstado.getSelectedItem() : "Todos";
+        String versao = filtroVersao  != null ? (String) filtroVersao.getSelectedItem() : "Todas";
+        String dataSel = filtroData   != null ? (String) filtroData.getSelectedItem() : "Qualquer data";
+        int total = 0;
 
         for (Orcamento o : orcamentoService.listarTodos()) {
             String nomeObra    = o.getIdObra() != null ? o.getIdObra().getDescricao() : "—";
@@ -202,16 +246,33 @@ public class OrcamentosPanel extends BasePanel {
             boolean aprovado = Boolean.TRUE.equals(o.getAprovado());
             if ("Aprovado".equals(estado) && !aprovado) continue;
             if ("Pendente".equals(estado) &&  aprovado) continue;
+            if ("Só ativa".equals(versao) && !Boolean.TRUE.equals(o.getAtivo())) continue;
+            if ("Só histórico".equals(versao) && Boolean.TRUE.equals(o.getAtivo())) continue;
+            if (!cumpreFiltroData(o, dataSel)) continue;
 
             BigDecimal[] t = calcularTotais(o);
             modelo.addRow(new Object[]{
                     o.getId(), nomeObra, nomeCliente,
+                    "V" + (o.getVersao() != null ? o.getVersao() : 1),
                     o.getDataEmissao() != null ? o.getDataEmissao().format(FMT) : "—",
                     t[0].setScale(2, RoundingMode.HALF_UP) + " €",
                     t[1].setScale(2, RoundingMode.HALF_UP) + " €",
-                    aprovado ? "Aprovado" : "Pendente"
+                    aprovado ? "Aprovado" : "Pendente",
+                    Boolean.TRUE.equals(o.getAtivo()) ? "Ativo" : "Histórico"
             });
+            total++;
         }
+        if (lblResumo != null) lblResumo.setText(total + (total == 1 ? " orçamento" : " orçamentos"));
+    }
+
+    private boolean cumpreFiltroData(Orcamento o, String dataSel) {
+        if (o.getDataEmissao() == null || dataSel == null || "Qualquer data".equals(dataSel)) return true;
+        LocalDate hoje = LocalDate.now();
+        return switch (dataSel) {
+            case "Últimos 30 dias" -> !o.getDataEmissao().isBefore(hoje.minusDays(30));
+            case "Este ano" -> o.getDataEmissao().getYear() == hoje.getYear();
+            default -> true;
+        };
     }
 
     private BigDecimal[] calcularTotais(Orcamento o) {
@@ -242,6 +303,20 @@ public class OrcamentosPanel extends BasePanel {
         try { orcamentoService.aprovar(id); carregarTabela();
             JOptionPane.showMessageDialog(this, "Orçamento aprovado.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) { erro(ex.getMessage()); }
+    }
+
+    private void criarRevisaoSelecionada() {
+        Integer id = idSelecionado();
+        if (id == null) { aviso("Seleciona um orçamento primeiro."); return; }
+        try {
+            Orcamento revisao = orcamentoService.criarRevisao(id);
+            carregarTabela();
+            JOptionPane.showMessageDialog(this,
+                    "Foi criada a revisão V" + revisao.getVersao() + ".",
+                    "Revisão criada", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            erro(ex.getMessage());
+        }
     }
 
     private void eliminarSelecionado() {
@@ -526,6 +601,46 @@ public class OrcamentosPanel extends BasePanel {
     private void aviso(String msg) { JOptionPane.showMessageDialog(this, msg, "Aviso", JOptionPane.INFORMATION_MESSAGE); }
     private void erro(String msg)  { JOptionPane.showMessageDialog(this, msg, "Erro",  JOptionPane.ERROR_MESSAGE); }
 
+    private static class EstadoOrcamentoRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String estado = value != null ? value.toString() : "";
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            if (!isSelected) {
+                if ("Aprovado".equalsIgnoreCase(estado)) {
+                    lbl.setBackground(new Color(220, 252, 231));
+                    lbl.setForeground(new Color(22, 101, 52));
+                } else {
+                    lbl.setBackground(new Color(255, 237, 213));
+                    lbl.setForeground(new Color(154, 52, 18));
+                }
+            }
+            return lbl;
+        }
+    }
+
+    private static class RegistoRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String registo = value != null ? value.toString() : "";
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            if (!isSelected) {
+                if ("Ativo".equalsIgnoreCase(registo)) {
+                    lbl.setBackground(new Color(219, 234, 254));
+                    lbl.setForeground(new Color(30, 64, 175));
+                } else {
+                    lbl.setBackground(new Color(241, 245, 249));
+                    lbl.setForeground(new Color(71, 85, 105));
+                }
+            }
+            return lbl;
+        }
+    }
+
     // =========================================================================
     //  FORMULÁRIO NOVO ORÇAMENTO
     // =========================================================================
@@ -571,7 +686,10 @@ public class OrcamentosPanel extends BasePanel {
         Orcamento construir() {
             Orcamento o = new Orcamento();
             o.setIdObra((Obra) comboObra.getSelectedItem());
-            o.setDataEmissao(LocalDate.now()); o.setAprovado(false);
+            o.setDataEmissao(LocalDate.now());
+            o.setAprovado(false);
+            o.setAtivo(true);
+            o.setVersao(1);
             return o;
         }
     }
@@ -615,6 +733,7 @@ public class OrcamentosPanel extends BasePanel {
             JPanel meta = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0)); meta.setOpaque(false);
             meta.add(metaLabel("Cliente", nomeCliente)); meta.add(metaLabel("Data emissão", data));
             meta.add(metaLabel("Orçamento nº", String.valueOf(orc.getId())));
+            meta.add(metaLabel("Versão", "V" + (orc.getVersao() != null ? orc.getVersao() : 1)));
             panel.add(meta, BorderLayout.CENTER); panel.add(new JSeparator(), BorderLayout.SOUTH);
             return panel;
         }

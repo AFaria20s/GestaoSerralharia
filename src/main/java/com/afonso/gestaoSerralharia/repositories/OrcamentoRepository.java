@@ -10,7 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface OrcamentoRepository extends JpaRepository<Orcamento, Integer> {
-    Optional<Orcamento> findByIdObra(Obra obra);
+    Optional<Orcamento> findFirstByIdObraAndAtivoTrueOrderByVersaoDesc(Obra obra);
+    Optional<Orcamento> findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(Obra obra);
+    List<Orcamento> findByIdObraOrderByVersaoDesc(Obra obra);
     List<Orcamento> findByAprovado(Boolean aprovado);
-    boolean existsByIdObra(Obra obra);
+    boolean existsByIdObraAndAtivoTrue(Obra obra);
 }

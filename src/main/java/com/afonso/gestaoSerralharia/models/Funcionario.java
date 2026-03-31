@@ -27,4 +27,7 @@ public class Funcionario {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "imagem_perfil", length = 500)
+    private String imagemPerfil;
+
 }

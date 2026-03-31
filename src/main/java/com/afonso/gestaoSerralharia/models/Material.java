@@ -7,6 +7,8 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -17,7 +19,7 @@ public class Material {
     @Column(name = "id_material", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_fornecedor")
     private Fornecedor idFornecedor;
@@ -28,4 +30,8 @@ public class Material {
     @ColumnDefault("0")
     @Column(name = "stock_atual", nullable = false)
     private Integer stockAtual;
+
+    @ColumnDefault("0")
+    @Column(name = "stock_reservado", precision = 10, scale = 2)
+    private BigDecimal stockReservado;
 }

@@ -39,10 +39,6 @@ public class EquipaService {
             throw new IllegalArgumentException("O nome da equipa é obrigatório");
         if (equipa.getIdObra() == null)
             throw new IllegalArgumentException("A equipa tem de estar associada a uma obra");
-        boolean orcamentoAprovado = orcamentoRepository.findByIdObra(equipa.getIdObra())
-                .map(Orcamento::getAprovado).orElse(false);
-        if (!orcamentoAprovado)
-            throw new IllegalStateException("Só é possível criar equipas em obras com orçamento aprovado");
         return equipaRepository.save(equipa);
     }
 

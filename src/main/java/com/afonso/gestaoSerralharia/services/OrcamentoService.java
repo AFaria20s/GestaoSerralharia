@@ -1,6 +1,7 @@
 package com.afonso.gestaoSerralharia.services;
 
 import com.afonso.gestaoSerralharia.models.Estadoobra;
+import com.afonso.gestaoSerralharia.models.Linhaorcamento;
 import com.afonso.gestaoSerralharia.models.Obra;
 import com.afonso.gestaoSerralharia.models.Orcamento;
 import com.afonso.gestaoSerralharia.repositories.EstadoobraRepository;
@@ -10,6 +11,9 @@ import com.afonso.gestaoSerralharia.repositories.OrcamentoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +25,7 @@ public class OrcamentoService {
     private final ObraRepository obraRepository;
     private final EstadoobraRepository estadoobraRepository;
     private final LinhaorcamentoRepository linhaorcamentoRepository;
+    private final MaterialService materialService;
 
     public List<Orcamento> listarTodos() {
         return orcamentoRepository.findAll();
@@ -32,7 +37,15 @@ public class OrcamentoService {
     }
 
     public Optional<Orcamento> buscarPorObra(Obra obra) {
-        return orcamentoRepository.findByIdObra(obra);
+        return orcamentoRepository.findFirstByIdObraAndAtivoTrueOrderByVersaoDesc(obra);
+    }
+
+    public Optional<Orcamento> buscarAprovadoPorObra(Obra obra) {
+        return orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(obra);
+    }
+
+    public List<Orcamento> listarPorObra(Obra obra) {
+        return orcamentoRepository.findByIdObraOrderByVersaoDesc(obra);
     }
 
     public List<Orcamento> buscarAprovados() {
@@ -42,10 +55,19 @@ public class OrcamentoService {
     public Orcamento guardar(Orcamento orcamento) {
         if (orcamento.getIdObra() == null)
             throw new IllegalArgumentException("O orçamento tem de estar associado a uma obra");
+        if (orcamento.getDataEmissao() == null)
+            orcamento.setDataEmissao(LocalDate.now());
+        if (orcamento.getVersao() == null || orcamento.getVersao() <= 0)
+            orcamento.setVersao(1);
+        if (orcamento.getAtivo() == null)
+            orcamento.setAtivo(true);
+        if (orcamento.getAprovado() == null)
+            orcamento.setAprovado(false);
         if (orcamento.getId() == null) {
-            boolean jaExiste = orcamentoRepository.existsByIdObra(orcamento.getIdObra());
-            if (jaExiste)
-                throw new IllegalStateException("Esta obra já tem um orçamento. Edite o orçamento existente");
+            boolean jaExisteAtivo = orcamentoRepository.existsByIdObraAndAtivoTrue(orcamento.getIdObra());
+            if (jaExisteAtivo) {
+                throw new IllegalStateException("Esta obra já tem um orçamento ativo. Crie uma revisão do orçamento atual.");
+            }
         }
         return orcamentoRepository.save(orcamento);
     }
@@ -56,13 +78,62 @@ public class OrcamentoService {
             throw new IllegalStateException("Este orçamento já foi aprovado");
         if (linhaorcamentoRepository.findByIdOrcamento(orcamento).isEmpty())
             throw new IllegalStateException("Não é possível aprovar um orçamento sem linhas");
+        Optional<Orcamento> anteriorAprovadoOpt = buscarAprovadoPorObra(orcamento.getIdObra())
+                .filter(o -> !o.getId().equals(orcamento.getId()));
+        anteriorAprovadoOpt.ifPresent(this::libertarReservas);
+
         orcamento.setAprovado(true);
+        orcamento.setAtivo(true);
         Estadoobra emExecucao = estadoobraRepository.findByNomeEstadoIgnoreCase("Em Execução")
                 .orElseThrow(() -> new RuntimeException("Estado 'Em Execução' não encontrado na BD"));
         Obra obra = orcamento.getIdObra();
         obra.setIdEstadoObra(emExecucao);
         obraRepository.save(obra);
-        return orcamentoRepository.save(orcamento);
+        Orcamento aprovado = orcamentoRepository.save(orcamento);
+        reservarMateriais(aprovado);
+        return aprovado;
+    }
+
+    public Orcamento criarRevisao(Integer idOrcamentoBase) {
+        Orcamento base = buscarPorId(idOrcamentoBase);
+        List<Orcamento> historico = listarPorObra(base.getIdObra());
+        int versaoSeguinte = historico.stream()
+                .map(Orcamento::getVersao)
+                .filter(v -> v != null)
+                .max(Integer::compareTo)
+                .orElse(0) + 1;
+
+        historico.stream()
+                .filter(o -> Boolean.TRUE.equals(o.getAtivo()))
+                .forEach(o -> {
+                    o.setAtivo(false);
+                    orcamentoRepository.save(o);
+                });
+
+        Orcamento revisao = new Orcamento();
+        revisao.setIdObra(base.getIdObra());
+        revisao.setDataEmissao(LocalDate.now());
+        revisao.setAprovado(false);
+        revisao.setAtivo(true);
+        revisao.setVersao(versaoSeguinte);
+        revisao.setIdOrcamentoOrigem(base);
+        revisao = orcamentoRepository.save(revisao);
+
+        List<Linhaorcamento> novasLinhas = new ArrayList<>();
+        for (Linhaorcamento linhaBase : linhaorcamentoRepository.findByIdOrcamento(base)) {
+            Linhaorcamento copia = new Linhaorcamento();
+            copia.setIdOrcamento(revisao);
+            copia.setIdMaterial(linhaBase.getIdMaterial());
+            copia.setIdTipoLinhaorcamento(linhaBase.getIdTipoLinhaorcamento());
+            copia.setIdIva(linhaBase.getIdIva());
+            copia.setIvaPercentagemAplicada(linhaBase.getIvaPercentagemAplicada());
+            copia.setQuantidade(linhaBase.getQuantidade());
+            copia.setPrecoUnit(linhaBase.getPrecoUnit());
+            copia.setNome(linhaBase.getNome());
+            copia.setQuantidadeReservada(BigDecimal.ZERO);
+            novasLinhas.add(linhaorcamentoRepository.save(copia));
+        }
+        return revisao;
     }
 
     public void eliminar(Integer id) {
@@ -70,5 +141,29 @@ public class OrcamentoService {
         if (orcamento.getAprovado())
             throw new IllegalStateException("Não é possível eliminar um orçamento aprovado");
         orcamentoRepository.deleteById(id);
+    }
+
+    private void reservarMateriais(Orcamento orcamento) {
+        for (Linhaorcamento linha : linhaorcamentoRepository.findByIdOrcamento(orcamento)) {
+            if (linha.getIdMaterial() == null || linha.getQuantidade() == null || linha.getQuantidade().signum() <= 0)
+                continue;
+            BigDecimal jaReservado = linha.getQuantidadeReservada() != null ? linha.getQuantidadeReservada() : BigDecimal.ZERO;
+            BigDecimal faltaReservar = linha.getQuantidade().subtract(jaReservado);
+            if (faltaReservar.signum() <= 0) continue;
+            materialService.reservar(linha.getIdMaterial(), faltaReservar);
+            linha.setQuantidadeReservada(linha.getQuantidade());
+            linhaorcamentoRepository.save(linha);
+        }
+    }
+
+    private void libertarReservas(Orcamento orcamento) {
+        for (Linhaorcamento linha : linhaorcamentoRepository.findByIdOrcamento(orcamento)) {
+            if (linha.getIdMaterial() == null) continue;
+            BigDecimal reservado = linha.getQuantidadeReservada() != null ? linha.getQuantidadeReservada() : BigDecimal.ZERO;
+            if (reservado.signum() <= 0) continue;
+            materialService.libertarReserva(linha.getIdMaterial(), reservado);
+            linha.setQuantidadeReservada(BigDecimal.ZERO);
+            linhaorcamentoRepository.save(linha);
+        }
     }
 }

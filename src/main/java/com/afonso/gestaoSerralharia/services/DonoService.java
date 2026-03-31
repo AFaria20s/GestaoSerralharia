@@ -28,8 +28,11 @@ public class DonoService {
             throw new IllegalArgumentException("Nome é obrigatório");
         if (dono.getEmail() == null || !dono.getEmail().contains("@"))
             throw new IllegalArgumentException("Email inválido");
-        if (dono.getId() == null && donoRepository.findByEmail(dono.getEmail()) != null)
+        Dono existente = donoRepository.findByEmail(dono.getEmail());
+        if (existente != null && !existente.getId().equals(dono.getId()))
             throw new IllegalArgumentException("Já existe uma conta com este email");
+        if (dono.getPainelInicial() == null || dono.getPainelInicial().isBlank())
+            dono.setPainelInicial("dashboard");
         if (!dono.getPassword().startsWith("$2a$"))
             dono.setPassword(passwordEncoder.encode(dono.getPassword()));
         return donoRepository.save(dono);

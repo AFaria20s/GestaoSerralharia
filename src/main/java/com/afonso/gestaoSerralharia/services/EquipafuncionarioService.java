@@ -22,4 +22,12 @@ public class EquipafuncionarioService {
     public List<Equipafuncionario> buscarPorFuncionario(Funcionario funcionario) { return equipafuncionarioRepository.findByIdFuncionario(funcionario); }
     public Equipafuncionario guardar(Equipafuncionario ef) { return equipafuncionarioRepository.save(ef); }
     public void eliminar(EquipafuncionarioId id) { equipafuncionarioRepository.deleteById(id); }
+
+    public boolean pertenceAEquipa(Equipa equipa, Funcionario funcionario) {
+        if (equipa == null || funcionario == null) return false;
+        return equipafuncionarioRepository.findByIdEquipa(equipa).stream()
+                .anyMatch(ef -> ef.getIdFuncionario() != null
+                        && funcionario.getId() != null
+                        && funcionario.getId().equals(ef.getIdFuncionario().getId()));
+    }
 }

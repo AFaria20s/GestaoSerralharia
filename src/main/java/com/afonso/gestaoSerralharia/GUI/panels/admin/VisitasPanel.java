@@ -49,7 +49,7 @@ public class VisitasPanel extends BasePanel {
         btnNova.addActionListener(e -> abrirDialogoNovo());
 
         add(buildHeader("Visitas",
-                        "RF03 · RF18 — registar e consultar visitas a obras",
+                        "",
                         btnNova),
                 BorderLayout.NORTH);
 

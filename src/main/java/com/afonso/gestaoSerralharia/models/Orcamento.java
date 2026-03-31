@@ -32,5 +32,16 @@ public class Orcamento {
     @Column(name = "aprovado", nullable = false)
     private Boolean aprovado;
 
+    @ColumnDefault("1")
+    @Column(name = "versao", nullable = false)
+    private Integer versao;
+
+    @ColumnDefault("true")
+    @Column(name = "ativo", nullable = false)
+    private Boolean ativo;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_orcamento_origem")
+    private Orcamento idOrcamentoOrigem;
 
 }

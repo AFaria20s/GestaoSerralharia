@@ -13,13 +13,14 @@ import javax.swing.*;
 @RequiredArgsConstructor
 public class GestaoSerralhariaApplication implements CommandLineRunner {
 
-    private final ObraService        obraService;
-    private final TarefaService      tarefaService;
-    private final FaturaService      faturaService;
+    private final ObraService obraService;
+    private final TarefaService tarefaService;
+    private final FaturaService faturaService;
     private final ProblemaService problemaService;
     private final ClienteService clienteService;
+    private final DonoService donoService;
     private final FuncionarioService funcionarioService;
-    private final CargoService       cargoService;
+    private final CargoService cargoService;
     private final AuthService authService;
     private final EstadoobraService estadoobraService;
     private final CodpostalService codpostalService;
@@ -32,6 +33,11 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
     private final EquipafuncionarioService equipafuncionarioService;
     private final EquipaService equipaService;
     private final EstadopagamentoService estadopagamentoService;
+    private final MaterialService materialService;
+    private final FornecedorService fornecedorService;
+    private final EncomendaService encomendaService;
+    private final LinhaencomendaService linhaEncomendaService;
+    private final EstadotarefaService estadotarefaService;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GestaoSerralhariaApplication.class)
@@ -43,10 +49,12 @@ public class GestaoSerralhariaApplication implements CommandLineRunner {
     public void run(String[] args) {
         SwingUtilities.invokeLater(() ->
                 new GUIDesktop(authService, obraService, tarefaService, faturaService,
-                        problemaService, clienteService, funcionarioService, cargoService,
+                        problemaService, clienteService, donoService, funcionarioService, cargoService,
                         estadoobraService, codpostalService, visitaService, orcamentoService,
                         linhaorcamentoService, taxaivaService, tipolinhaorcamentoService, gravidadeproblemaService,
-                        equipafuncionarioService, equipaService, estadopagamentoService
+                        equipafuncionarioService, equipaService, estadopagamentoService,
+                        materialService, fornecedorService, encomendaService, linhaEncomendaService,
+                        estadotarefaService
                 ));
     }
 }

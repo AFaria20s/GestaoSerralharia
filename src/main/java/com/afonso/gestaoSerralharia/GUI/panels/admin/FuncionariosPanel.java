@@ -57,7 +57,7 @@ public class FuncionariosPanel extends BasePanel {
         btnNovo.addActionListener(e -> abrirDialogoNovo());
 
         add(buildHeader("Funcionários",
-                        "RF11 · RF12 — gerir funcionários da empresa",
+                        "",
                         btnNovo),
                 BorderLayout.NORTH);
 

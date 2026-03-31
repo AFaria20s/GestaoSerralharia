@@ -38,4 +38,16 @@ public class SessionManager {
         if (funcionario != null) return "Funcionário";
         return "";
     }
+
+    public String getImagemPerfil() {
+        if (dono != null) return dono.getImagemPerfil();
+        if (funcionario != null) return funcionario.getImagemPerfil();
+        return null;
+    }
+
+    public String getPainelInicial() {
+        if (dono != null && dono.getPainelInicial() != null && !dono.getPainelInicial().isBlank())
+            return dono.getPainelInicial();
+        return isDono() ? "dashboard" : "inicio";
+    }
 }

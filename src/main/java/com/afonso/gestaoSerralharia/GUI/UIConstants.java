@@ -46,11 +46,9 @@ public final class UIConstants {
     public static final float  FONT_LOGIN_TITLE   = 20f;
 
     public static final Color  COLOR_ADMIN_ACCENT      = new Color(59, 130, 246);
-    public static final Color  COLOR_ADMIN_HOVER_BG    = new Color(239, 246, 255);
     public static final Color  COLOR_ADMIN_ACTIVE_FG   = new Color(29, 78, 216);
 
     public static final Color  COLOR_FUNC_ACCENT       = new Color(22, 163, 74);
-    public static final Color  COLOR_FUNC_HOVER_BG     = new Color(240, 253, 244);
     public static final Color  COLOR_FUNC_ACTIVE_FG    = new Color(21, 128, 61);
 
     public static final Color  COLOR_DANGER   = new Color(220, 38, 38);
@@ -59,7 +57,6 @@ public final class UIConstants {
     public static final Color  COLOR_INFO     = new Color(37, 99, 235);
 
     public static final Color  COLOR_LOGIN_ACCENT_BG   = new Color(30, 41, 59);
-    public static final Color  COLOR_LOGIN_ACCENT_ICON = new Color(148, 163, 184);
 
     public static final int    SEARCH_FIELD_WIDTH = 220;
     public static final int    SEARCH_FIELD_HEIGHT = 30;

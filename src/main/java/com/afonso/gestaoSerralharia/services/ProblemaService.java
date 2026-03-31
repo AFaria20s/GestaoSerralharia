@@ -40,7 +40,7 @@ public class ProblemaService {
             throw new IllegalArgumentException("O problema tem de estar associado a uma obra");
         if (problema.getDescricao() == null || problema.getDescricao().isBlank())
             throw new IllegalArgumentException("A descrição do problema é obrigatória");
-        boolean orcamentoAprovado = orcamentoRepository.findByIdObra(problema.getIdObra())
+        boolean orcamentoAprovado = orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(problema.getIdObra())
                 .map(o -> o.getAprovado()).orElse(false);
         if (!orcamentoAprovado)
             throw new IllegalStateException("Só é possível reportar problemas em obras em execução");

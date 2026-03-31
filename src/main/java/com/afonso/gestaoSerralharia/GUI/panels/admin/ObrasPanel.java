@@ -86,7 +86,7 @@ public class ObrasPanel extends BasePanel {
         acoes.add(btnRefresh);
         acoes.add(btnNova);
 
-        return buildHeader("Obras", "Gestão e acompanhamento de obras  ·  RF02 · RF07 · RF08 · RF22", acoes);
+        return buildHeader("Obras", "", acoes);
     }
 
     // ─────────────────────────────────────────────────────────────────────

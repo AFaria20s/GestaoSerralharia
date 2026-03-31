@@ -23,5 +23,10 @@ public class Dono {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "imagem_perfil", length = 500)
+    private String imagemPerfil;
+
+    @Column(name = "painel_inicial", length = 40)
+    private String painelInicial;
 
 }

@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface LinhaorcamentoRepository extends JpaRepository<Linhaorcamento, Integer> {
     List<Linhaorcamento> findByIdOrcamento(Orcamento orcamento);
+    void deleteByIdOrcamento(Orcamento orcamento);
 }

@@ -29,6 +29,10 @@ public class Tarefa {
     private Funcionario idFuncionario;
 
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_equipa")
+    private Equipa idEquipa;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_estado_tarefa")
     private Estadotarefa idEstadoTarefa;
 

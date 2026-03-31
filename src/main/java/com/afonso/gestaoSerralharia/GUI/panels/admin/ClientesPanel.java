@@ -33,7 +33,7 @@ public class ClientesPanel extends BasePanel {
         btnNovo.setForeground(Color.WHITE);
         btnNovo.addActionListener(e -> abrirDialogoNovo());
 
-        add(buildHeader("Clientes", "RF01 · RF21 — gerir clientes da empresa", btnNovo), BorderLayout.NORTH);
+        add(buildHeader("Clientes", "", btnNovo), BorderLayout.NORTH);
         add(buildCorpo(), BorderLayout.CENTER);
         carregarTabela(null);
     }

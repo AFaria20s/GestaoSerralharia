@@ -50,5 +50,8 @@ public class Linhaorcamento {
     @Column(name = "nome", length = 150)
     private String nome;
 
+    @ColumnDefault("0")
+    @Column(name = "quantidade_reservada", precision = 10, scale = 2)
+    private BigDecimal quantidadeReservada;
 
 }

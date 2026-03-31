@@ -7,6 +7,7 @@ import com.afonso.gestaoSerralharia.repositories.OrcamentoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -42,6 +43,11 @@ public class LinhaorcamentoService {
             throw new IllegalArgumentException("A quantidade tem de ser maior que zero");
         if (linha.getIvaPercentagemAplicada() == null)
             throw new IllegalArgumentException("A percentagem de IVA é obrigatória");
+        if (linha.getIdMaterial() != null && linha.getQuantidade().scale() > 0
+                && linha.getQuantidade().stripTrailingZeros().scale() > 0)
+            throw new IllegalArgumentException("As quantidades de materiais devem ser inteiras para poder reservar stock");
+        if (linha.getQuantidadeReservada() == null)
+            linha.setQuantidadeReservada(BigDecimal.ZERO);
         return linhaorcamentoRepository.save(linha);
     }
 
