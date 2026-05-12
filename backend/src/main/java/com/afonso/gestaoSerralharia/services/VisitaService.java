@@ -2,7 +2,6 @@ package com.afonso.gestaoSerralharia.services;
 
 import com.afonso.gestaoSerralharia.models.Obra;
 import com.afonso.gestaoSerralharia.models.Visita;
-import com.afonso.gestaoSerralharia.repositories.OrcamentoRepository;
 import com.afonso.gestaoSerralharia.repositories.VisitaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.List;
 public class VisitaService {
 
     private final VisitaRepository visitaRepository;
-    private final OrcamentoRepository orcamentoRepository;
 
     public List<Visita> listarTodos() {
         return visitaRepository.findAll();
@@ -34,10 +32,12 @@ public class VisitaService {
             throw new IllegalArgumentException("A visita tem de estar associada a uma obra");
         if (visita.getDataVisita() == null)
             throw new IllegalArgumentException("A data da visita é obrigatória");
-        boolean orcamentoAprovado = orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(visita.getIdObra())
-                .map(o -> o.getAprovado()).orElse(false);
-        if (orcamentoAprovado)
-            throw new IllegalStateException("Não é possível registar visitas numa obra com orçamento já aprovado");
+        Obra obra = visita.getIdObra();
+        String estadoObra = obra.getIdEstadoObra() != null ? obra.getIdEstadoObra().getNomeEstado() : null;
+        if (estadoObra != null && (estadoObra.equalsIgnoreCase("Concluída") || estadoObra.equalsIgnoreCase("Concluida"))) {
+            throw new IllegalStateException("Não é possível registar visitas numa obra concluída");
+        }
+
         return visitaRepository.save(visita);
     }
 
