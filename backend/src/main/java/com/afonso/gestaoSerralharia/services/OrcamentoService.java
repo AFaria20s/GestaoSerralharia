@@ -89,7 +89,19 @@ public class OrcamentoService {
             throw new IllegalStateException("Não é possível aprovar um orçamento sem linhas");
         Optional<Orcamento> anteriorAprovadoOpt = buscarAprovadoPorObra(orcamento.getIdObra())
                 .filter(o -> !o.getId().equals(orcamento.getId()));
-        anteriorAprovadoOpt.ifPresent(this::libertarReservas);
+        if (anteriorAprovadoOpt.isPresent()) {
+            Orcamento anteriorAprovado = anteriorAprovadoOpt.get();
+            Integer versaoAtual = orcamento.getVersao() != null ? orcamento.getVersao() : 0;
+            Integer versaoAprovada = anteriorAprovado.getVersao() != null ? anteriorAprovado.getVersao() : 0;
+            if (versaoAprovada > versaoAtual) {
+                throw new IllegalStateException(
+                        "Não é possível aprovar uma versão antiga quando já existe uma versão mais recente aprovada");
+            }
+            libertarReservas(anteriorAprovado);
+            anteriorAprovado.setAprovado(false);
+            anteriorAprovado.setAtivo(false);
+            orcamentoRepository.save(anteriorAprovado);
+        }
 
         orcamento.setAprovado(true);
         orcamento.setAtivo(true);
