@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Desktop" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="gestaoSerralharia-desktop" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.afonso.gestaoSerralharia.DesktopApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

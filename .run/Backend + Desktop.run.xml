@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Backend + Desktop" type="CompoundRunConfigurationType" factoryName="Compound">
+    <toRun name="Backend" type="SpringBootApplicationConfigurationType" />
+    <toRun name="Desktop" type="SpringBootApplicationConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

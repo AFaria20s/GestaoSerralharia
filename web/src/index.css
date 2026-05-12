@@ -1,0 +1,29 @@
+:root {
+  --ui-bg: #f5f5f5;
+  --ui-surface: #f3f3f3;
+  --ui-border: #dddddd;
+  --ui-text: #111111;
+  --ui-muted: #6e6e6e;
+  --ui-blue: #6fc0e9;
+  --ui-green: #1ab64b;
+  --ui-red: #e94652;
+  --ui-yellow: #d5a701;
+  --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-base);
+  color: var(--ui-text);
+  background: var(--ui-bg);
+}
+
+button,
+input {
+  font-family: inherit;
+}
