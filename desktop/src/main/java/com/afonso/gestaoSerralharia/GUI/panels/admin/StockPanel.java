@@ -64,14 +64,7 @@ public class StockPanel extends BasePanel {
         this.encomendaService      = encomendaService;
         this.linhaencomendaService = linhaencomendaService;
 
-        // ── Botão refresh no cabeçalho
-        JButton btnRefresh = buildButton("Atualizar");
-        btnRefresh.setToolTipText("Atualizar");
-        btnRefresh.addActionListener(e -> carregarTudo());
-
-        add(buildHeader("Stock",
-                "",
-                btnRefresh), BorderLayout.NORTH);
+        add(buildHeader("Stock", ""), BorderLayout.NORTH);
 
         tabs = new JTabbedPane();
         tabs.setFont(tabs.getFont().deriveFont(13f));
@@ -455,8 +448,8 @@ public class StockPanel extends BasePanel {
         acoes.setOpaque(false);
 
         JButton btnNovo  = buildSmallButton("+ Novo Fornecedor");
-        JButton btnEditar = buildSmallButton("✎ Editar");
-        JButton btnElim  = buildSmallButton("🗑 Eliminar");
+        JButton btnEditar = buildSmallButton("Editar");
+        JButton btnElim  = buildSmallButton("Eliminar");
         btnElim.setForeground(UIConstants.COLOR_DANGER);
 
         btnNovo  .addActionListener(e -> abrirDialogoNovoFornecedor());
@@ -643,9 +636,9 @@ public class StockPanel extends BasePanel {
         acoes.setOpaque(false);
 
         JButton btnNova    = buildSmallButton("+ Nova Encomenda");
-        JButton btnDetalhe = buildSmallButton("🔍 Ver Detalhe");
-        JButton btnEntreg  = buildSmallButton("✓ Marcar Entregue");
-        JButton btnElim    = buildSmallButton("🗑 Eliminar");
+        JButton btnDetalhe = buildSmallButton("Ver Detalhe");
+        JButton btnEntreg  = buildSmallButton("Marcar Entregue");
+        JButton btnElim    = buildSmallButton("Eliminar");
         btnEntreg.setForeground(UIConstants.COLOR_SUCCESS);
         btnElim  .setForeground(UIConstants.COLOR_DANGER);
 
@@ -768,7 +761,7 @@ public class StockPanel extends BasePanel {
         campoPrecoLinha.setPreferredSize(new Dimension(80, 28));
 
         JButton btnAddLinha = buildSmallButton("+ Adicionar");
-        JButton btnRemLinha = buildSmallButton("✕ Remover");
+        JButton btnRemLinha = buildSmallButton("Remover");
 
         JLabel lblErroLinha = new JLabel(" ");
         lblErroLinha.setForeground(UIConstants.COLOR_DANGER);
@@ -950,7 +943,7 @@ public class StockPanel extends BasePanel {
         // ── Info cabeçalho ────────────────────────────────────────────────
         String forn   = enc.getIdFornecedor() != null ? enc.getIdFornecedor().getNome() : "—";
         String data   = enc.getDataPedido() != null ? enc.getDataPedido().format(FMT) : "—";
-        String estado = Boolean.TRUE.equals(enc.getEntregue()) ? "✓ Entregue" : "⏳ Pendente";
+        String estado = Boolean.TRUE.equals(enc.getEntregue()) ? "Entregue" : "Pendente";
         String total  = enc.getValorTotalCompra() != null
                 ? String.format("%.2f €", enc.getValorTotalCompra()) : "0.00 €";
 

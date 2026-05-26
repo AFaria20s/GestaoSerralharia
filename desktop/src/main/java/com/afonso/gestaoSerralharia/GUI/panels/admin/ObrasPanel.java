@@ -77,13 +77,8 @@ public class ObrasPanel extends BasePanel {
         btnNova.setBorderPainted(false);
         btnNova.addActionListener(e -> abrirDialogoNovaObra());
 
-        JButton btnRefresh = buildButton("↻");
-        btnRefresh.setToolTipText("Actualizar lista");
-        btnRefresh.addActionListener(e -> carregar());
-
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acoes.setOpaque(false);
-        acoes.add(btnRefresh);
         acoes.add(btnNova);
 
         return buildHeader("Obras", "", acoes);
@@ -96,9 +91,9 @@ public class ObrasPanel extends BasePanel {
     private JPanel buildCorpo() {
         JPanel corpo = new JPanel(new BorderLayout(0, 14));
         corpo.setOpaque(false);
-        corpo.add(buildBarraFiltros(), BorderLayout.NORTH);
+        corpo.add(buildSurface(buildBarraFiltros(), new Insets(10, 12, 10, 12)), BorderLayout.NORTH);
         corpo.add(buildTabela(), BorderLayout.CENTER);
-        corpo.add(buildBarraAcoes(), BorderLayout.SOUTH);
+        corpo.add(buildSurface(buildBarraAcoes(), new Insets(10, 12, 10, 12)), BorderLayout.SOUTH);
         return corpo;
     }
 
@@ -212,6 +207,11 @@ public class ObrasPanel extends BasePanel {
         barra.add(btnHistorico);
         barra.add(Box.createHorizontalStrut(16));
         barra.add(btnEliminar);
+        JLabel hint = new JLabel("Duplo clique numa obra para abrir detalhe");
+        hint.setFont(hint.getFont().deriveFont(UIConstants.FONT_SMALL));
+        hint.setForeground(UIManager.getColor("Label.disabledForeground"));
+        barra.add(Box.createHorizontalStrut(16));
+        barra.add(hint);
 
         return barra;
     }
@@ -518,7 +518,7 @@ public class ObrasPanel extends BasePanel {
 
         orcamentoService.buscarPorObra(obra).ifPresentOrElse(
                 orc -> addDetalheRow(detalhe, gbc, 6, "Orçamento",
-                        orc.getAprovado() ? "✓ Aprovado" : "Pendente de aprovação"),
+                        orc.getAprovado() ? "Aprovado" : "Pendente de aprovação"),
                 ()   -> addDetalheRow(detalhe, gbc, 6, "Orçamento", "Sem orçamento")
         );
 

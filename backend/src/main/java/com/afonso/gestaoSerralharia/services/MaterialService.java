@@ -74,6 +74,22 @@ public class MaterialService {
         materialRepository.save(material);
     }
 
+    public void consumirReserva(Material material, BigDecimal quantidade) {
+        if (material == null || quantidade == null || quantidade.signum() <= 0) return;
+
+        BigDecimal reservadoAtual = stockReservado(material);
+        BigDecimal aConsumir = quantidade.min(reservadoAtual);
+        if (aConsumir.signum() <= 0) return;
+
+        int stockAtual = material.getStockAtual() != null ? material.getStockAtual() : 0;
+        int consumoInt = aConsumir.intValue();
+        int novoStock = Math.max(0, stockAtual - consumoInt);
+
+        material.setStockAtual(novoStock);
+        material.setStockReservado(reservadoAtual.subtract(aConsumir));
+        materialRepository.save(material);
+    }
+
     public void eliminar(Integer id) {
         buscarPorId(id);
         materialRepository.deleteById(id);

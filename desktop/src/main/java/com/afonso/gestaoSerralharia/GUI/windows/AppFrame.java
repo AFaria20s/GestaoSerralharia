@@ -1,6 +1,7 @@
 package com.afonso.gestaoSerralharia.GUI.windows;
 
 import com.afonso.gestaoSerralharia.GUI.UIConstants;
+import com.afonso.gestaoSerralharia.GUI.panels.BasePanel;
 import com.afonso.gestaoSerralharia.GUI.panels.admin.*;
 import com.afonso.gestaoSerralharia.config.SessionManager;
 import com.afonso.gestaoSerralharia.models.Dono;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 
 public class AppFrame extends JFrame {
 
@@ -32,13 +34,17 @@ public class AppFrame extends JFrame {
     private JPanel     rootContainer;
 
     private CardLayout adminCardLayout;
-    private JPanel     adminContent;
+    private FadePanel  adminContent;
 
     private final Map<String, JButton> navButtons = new HashMap<>();
     private final List<JLabel> sidebarAvatarLabels = new ArrayList<>();
     private final List<JLabel> sidebarRoleLabels = new ArrayList<>();
     private final List<AbstractButton> sidebarProfileButtons = new ArrayList<>();
+    private final Map<String, JPanel> adminPanels = new HashMap<>();
     private String panelAtivo = "";
+    private Timer fadeTimer;
+    private final Preferences preferences = Preferences.userNodeForPackage(AppFrame.class);
+    private boolean animationsEnabled = true;
 
     private JTextField     loginEmailField;
     private JPasswordField loginPasswordField;
@@ -69,6 +75,7 @@ public class AppFrame extends JFrame {
     private final EncomendaService encomendaService;
     private final LinhaencomendaService linhaEncomendaService;
     private final EstadotarefaService estadotarefaService;
+    private final MovimentofinanceiroService movimentofinanceiroService;
 
     public AppFrame(AuthService authService,
                     ObraService obraService,
@@ -94,7 +101,8 @@ public class AppFrame extends JFrame {
                     FornecedorService fornecedorService,
                     EncomendaService encomendaService,
                     LinhaencomendaService linhaEncomendaService,
-                    EstadotarefaService estadotarefaService
+                    EstadotarefaService estadotarefaService,
+                    MovimentofinanceiroService movimentofinanceiroService
     ) {
         this.authService                = authService;
         this.obraService                = obraService;
@@ -121,6 +129,8 @@ public class AppFrame extends JFrame {
         this.encomendaService           = encomendaService;
         this.linhaEncomendaService      = linhaEncomendaService;
         this.estadotarefaService        = estadotarefaService;
+        this.movimentofinanceiroService = movimentofinanceiroService;
+        this.animationsEnabled = preferences.getBoolean("animations_enabled", true);
 
         setTitle("Serralharia");
         setMinimumSize(new Dimension(UIConstants.APP_MIN_WIDTH, UIConstants.APP_MIN_HEIGHT));
@@ -163,26 +173,38 @@ public class AppFrame extends JFrame {
     // ─────────────────────────────────────────────────────────────────────────
 
     private JPanel buildLoginView() {
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(bg());
-        root.add(buildLoginAccent(), BorderLayout.WEST);
-        root.add(buildLoginForm(),   BorderLayout.CENTER);
+        JPanel root = new JPanel(new GridBagLayout());
+        root.setBackground(new Color(244, 247, 252));
+
+        JPanel shell = new JPanel(new BorderLayout());
+        shell.setBackground(Color.WHITE);
+        shell.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(215, 225, 238)),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        shell.setPreferredSize(new Dimension(UIConstants.LOGIN_WIDTH, UIConstants.LOGIN_HEIGHT));
+        shell.add(buildLoginAccent(), BorderLayout.WEST);
+        shell.add(buildLoginForm(), BorderLayout.CENTER);
+
+        root.add(shell);
         return root;
     }
 
     private JPanel buildLoginAccent() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setPreferredSize(new Dimension(UIConstants.LOGIN_ACCENT_WIDTH, 0));
-        panel.setBackground(UIConstants.COLOR_LOGIN_ACCENT_BG);
+        panel.setPreferredSize(new Dimension(140, 0));
+        panel.setBackground(new Color(32, 52, 82));
 
-        JLabel line1 = label("Serralharia", 15f, Color.WHITE, Font.BOLD);
+        JLabel line1 = label("Serralharia", 16f, Color.WHITE, Font.BOLD);
+        JLabel line2 = label("Backoffice", 13f, new Color(191, 219, 254), Font.PLAIN);
 
-        for (JLabel l : new JLabel[]{line1})
-            l.setAlignmentX(CENTER_ALIGNMENT);
+        line1.setAlignmentX(CENTER_ALIGNMENT);
+        line2.setAlignmentX(CENTER_ALIGNMENT);
 
         panel.add(Box.createVerticalGlue());
         panel.add(line1);
+        panel.add(Box.createVerticalStrut(6));
+        panel.add(line2);
         panel.add(Box.createVerticalGlue());
         return panel;
     }
@@ -190,17 +212,17 @@ public class AppFrame extends JFrame {
     private JPanel buildLoginForm() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(bg());
+        panel.setBackground(Color.WHITE);
         panel.setBorder(new EmptyBorder(
                 UIConstants.LOGIN_FORM_PAD_TOP,
                 UIConstants.LOGIN_FORM_PAD_H,
                 UIConstants.LOGIN_FORM_PAD_H,
                 UIConstants.LOGIN_FORM_PAD_H));
 
-        JLabel titulo = label("Entrar", UIConstants.FONT_LOGIN_TITLE, null, Font.BOLD);
+        JLabel titulo = label("Iniciar sessão", 24f, new Color(15, 23, 42), Font.BOLD);
         titulo.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel sub = label("Gestão de Obras", UIConstants.FONT_PANEL_SUB, muted(), Font.PLAIN);
+        JLabel sub = label("Acede à área de gestão", UIConstants.FONT_PANEL_SUB, new Color(100, 116, 139), Font.PLAIN);
         sub.setAlignmentX(LEFT_ALIGNMENT);
         sub.setBorder(new EmptyBorder(3, 0, 24, 0));
 
@@ -210,8 +232,10 @@ public class AppFrame extends JFrame {
 
         JButton btn = new JButton("Entrar");
         btn.setAlignmentX(LEFT_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, UIConstants.LOGIN_BTN_HEIGHT));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         btn.setFocusPainted(false);
+        btn.setBackground(UIConstants.COLOR_ADMIN_ACCENT);
+        btn.setForeground(Color.WHITE);
         btn.addActionListener(e -> tentarLogin());
 
         loginEmailField.addActionListener(e -> loginPasswordField.requestFocusInWindow());
@@ -224,7 +248,7 @@ public class AppFrame extends JFrame {
         panel.add(fieldGroup("Password", loginPasswordField));
         panel.add(Box.createVerticalStrut(UIConstants.LOGIN_FIELD_GAP - 2));
         panel.add(loginErroLabel);
-        panel.add(Box.createVerticalStrut(14));
+        panel.add(Box.createVerticalStrut(16));
         panel.add(btn);
         return panel;
     }
@@ -261,7 +285,7 @@ public class AppFrame extends JFrame {
         root.setBackground(bg());
 
         CardLayout cl      = new CardLayout();
-        JPanel     content = new JPanel(cl);
+        FadePanel content = new FadePanel(cl);
         content.setBackground(bg());
 
         adminCardLayout = cl;
@@ -283,8 +307,8 @@ public class AppFrame extends JFrame {
         sb.setPreferredSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 0));
         sb.setMinimumSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 0));
         sb.setMaximumSize(new Dimension(UIConstants.SIDEBAR_WIDTH, Integer.MAX_VALUE));
-        sb.setBackground(new Color(248, 250, 252));
-        sb.setBorder(new MatteBorder(0, 0, 0, 1, border()));
+        sb.setBackground(new Color(242, 246, 252));
+        sb.setBorder(new MatteBorder(0, 0, 0, 1, new Color(216, 223, 235)));
 
         Color accent = UIConstants.COLOR_ADMIN_ACCENT;
         String role  = "Administrador";
@@ -306,6 +330,7 @@ public class AppFrame extends JFrame {
         sb.add(sidebarBtn("clientes",     "Clientes"));
         sb.add(sidebarBtn("stock",        "Stock"));
         sb.add(sidebarBtn("faturacao",    "Faturação"));
+        sb.add(sidebarBtn("movimentos",   "Movimentos"));
 
         sb.add(Box.createVerticalGlue());
         sb.add(sidebarFooter());
@@ -363,6 +388,7 @@ public class AppFrame extends JFrame {
         btn.setContentAreaFilled(false);
         btn.setFocusPainted(false);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.putClientProperty("JButton.buttonType", "roundRect");
         btn.setBorder(new EmptyBorder(
                 UIConstants.SIDEBAR_PAD_V + 1, UIConstants.SIDEBAR_PAD_H + 10,
                 UIConstants.SIDEBAR_PAD_V + 1, UIConstants.SIDEBAR_PAD_H + 10));
@@ -448,7 +474,7 @@ public class AppFrame extends JFrame {
         addAdminPanel("dashboard",    new DashboardPanel(
                 obraService, tarefaService, faturaService,
                 problemaService, clienteService, funcionarioService,
-                orcamentoService, visitaService));
+                orcamentoService, visitaService, movimentofinanceiroService));
         addAdminPanel("obras",        new ObrasPanel(
                 obraService, clienteService, estadoObraService,
                 visitaService, orcamentoService, codPostalService,
@@ -460,6 +486,7 @@ public class AppFrame extends JFrame {
                 orcamentoService,
                 linhaorcamentoService,
                 obraService,
+                materialService,
                 taxaivaService,
                 tipolinhaorcamentoService));
         addAdminPanel("funcionarios", new FuncionariosPanel(funcionarioService, cargoService));
@@ -472,9 +499,13 @@ public class AppFrame extends JFrame {
         addAdminPanel("clientes",     new ClientesPanel(clienteService, codPostalService));
         addAdminPanel("stock",        new StockPanel(materialService, fornecedorService, encomendaService, linhaEncomendaService));
         addAdminPanel("faturacao",    new FaturacaoPanel(faturaService, obraService, orcamentoService, linhaorcamentoService, estadoPagamentoService));
+        addAdminPanel("movimentos",   new MovimentosFinanceirosPanel(movimentofinanceiroService));
     }
 
-    private void addAdminPanel(String id, JPanel panel) { adminContent.add(panel, id); }
+    private void addAdminPanel(String id, JPanel panel) {
+        adminPanels.put(id, panel);
+        adminContent.add(panel, id);
+    }
 
     public void showPanel(String id) {
         JButton anterior = navButtons.get(panelAtivo);
@@ -493,6 +524,34 @@ public class AppFrame extends JFrame {
 
         panelAtivo = id;
         adminCardLayout.show(adminContent, id);
+        animatePanelFade();
+        JPanel panel = adminPanels.get(id);
+        if (panel instanceof BasePanel basePanel) {
+            basePanel.onPanelShown();
+        }
+    }
+
+    private void animatePanelFade() {
+        if (!animationsEnabled) {
+            adminContent.setAlpha(1f);
+            return;
+        }
+        if (fadeTimer != null && fadeTimer.isRunning()) fadeTimer.stop();
+        adminContent.setAlpha(0.0f);
+        final int durationMs = 240;
+        final int interval = 15;
+        final int steps = Math.max(1, durationMs / interval);
+        fadeTimer = new Timer(interval, null);
+        fadeTimer.addActionListener(e -> {
+            float alpha = adminContent.getAlpha() + (1.0f / steps);
+            if (alpha >= 1f) {
+                adminContent.setAlpha(1f);
+                fadeTimer.stop();
+            } else {
+                adminContent.setAlpha(alpha);
+            }
+        });
+        fadeTimer.start();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -531,7 +590,9 @@ public class AppFrame extends JFrame {
     }
 
     private void applySidebarButtonStyle(JButton btn, boolean hovered, boolean active, Color outline, Color accentText) {
-        btn.setForeground(active || hovered ? accentText : UIManager.getColor("Label.foreground"));
+        btn.setForeground(active || hovered ? accentText : new Color(51, 65, 85));
+        btn.setContentAreaFilled(active || hovered);
+        btn.setBackground(active ? new Color(214, 230, 255) : new Color(235, 243, 253));
         btn.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder((active || hovered) ? outline : new Color(0, 0, 0, 0), 1, true),
                 new EmptyBorder(UIConstants.SIDEBAR_PAD_V, UIConstants.SIDEBAR_PAD_H + 10,
@@ -603,6 +664,9 @@ public class AppFrame extends JFrame {
 
         JComboBox<String> painelInicial = new JComboBox<>(new String[]{"dashboard", "obras", "orcamentos", "faturacao", "tarefas", "stock"});
         painelInicial.setSelectedItem(atual.getPainelInicial() != null ? atual.getPainelInicial() : "dashboard");
+        JCheckBox chkAnimacoes = new JCheckBox("Ativar animações suaves");
+        chkAnimacoes.setSelected(animationsEnabled);
+        chkAnimacoes.setOpaque(false);
 
         JButton escolher = buildButton("Escolher imagem");
         escolher.addActionListener(e -> escolherImagem(imagem, preview, nome.getText(), UIConstants.COLOR_ADMIN_ACCENT));
@@ -639,6 +703,8 @@ public class AppFrame extends JFrame {
                 atual.setEmpresaIban(blank2null(empIban.getText()));
                 Dono guardado = donoService.guardar(atual);
                 session.loginDono(guardado);
+                animationsEnabled = chkAnimacoes.isSelected();
+                preferences.putBoolean("animations_enabled", animationsEnabled);
                 setTitle("Serralharia - " + session.getNome());
                 refreshSidebarProfile();
                 dlg.dispose();
@@ -653,7 +719,7 @@ public class AppFrame extends JFrame {
 
         return buildPerfilForm("Perfil do administrador", preview, nome, email, password, imagem, escolher, erro,
                 cancelar, guardar, painelInicial, extraInfo,
-                empNome, empMorada, empNif, empTelefone, empEmail, empIban);
+                empNome, empMorada, empNif, empTelefone, empEmail, empIban, chkAnimacoes);
     }
 
     private static String nvl(String s)       { return s != null ? s : ""; }
@@ -664,7 +730,8 @@ public class AppFrame extends JFrame {
                                    JLabel erro, JButton cancelar, JButton guardar,
                                    JComboBox<String> painelInicial, JLabel extraInfo,
                                    JTextField empNome, JTextField empMorada, JTextField empNif,
-                                   JTextField empTelefone, JTextField empEmail, JTextField empIban) {
+                                   JTextField empTelefone, JTextField empEmail, JTextField empIban,
+                                   JCheckBox chkAnimacoes) {
 
         // Cabeçalho
         JLabel lblTitulo = label(titulo, 18f, null, Font.BOLD);
@@ -690,6 +757,13 @@ public class AppFrame extends JFrame {
         if (painelInicial != null) {
             c.gridy = y++; formPessoal.add(fieldGroup("Painel inicial", painelInicial), c);
             if (extraInfo != null) { c.gridy = y++; formPessoal.add(extraInfo, c); }
+        }
+        if (chkAnimacoes != null) {
+            c.gridy = y++;
+            JPanel animWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            animWrap.setOpaque(false);
+            animWrap.add(chkAnimacoes);
+            formPessoal.add(animWrap, c);
         }
         c.gridy = y; formPessoal.add(erro, c);
 
@@ -795,4 +869,32 @@ public class AppFrame extends JFrame {
     private Color bg()     { Color c = UIManager.getColor("Panel.background");        return c != null ? c : Color.WHITE; }
     private Color muted()  { Color c = UIManager.getColor("Label.disabledForeground"); return c != null ? c : Color.GRAY; }
     private Color border() { Color c = UIManager.getColor("Component.borderColor");    return c != null ? c : new Color(226, 232, 240); }
+
+    private static final class FadePanel extends JPanel {
+        private float alpha = 1f;
+
+        private FadePanel(LayoutManager layout) {
+            super(layout);
+            setOpaque(true);
+        }
+
+        float getAlpha() {
+            return alpha;
+        }
+
+        void setAlpha(float alpha) {
+            this.alpha = Math.max(0f, Math.min(1f, alpha));
+            repaint();
+        }
+
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            int slideX = Math.round((1f - alpha) * 14f);
+            g2.translate(slideX, 0);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            super.paint(g2);
+            g2.dispose();
+        }
+    }
 }

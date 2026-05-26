@@ -65,13 +65,8 @@ public class EquipasPanel extends BasePanel {
         btnNova.setFocusPainted(false);
         btnNova.addActionListener(e -> abrirDialogoNova());
 
-        JButton btnRefresh = buildButton("↻");
-        btnRefresh.setToolTipText("Actualizar lista");
-        btnRefresh.addActionListener(e -> carregar());
-
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acoes.setOpaque(false);
-        acoes.add(btnRefresh);
         acoes.add(btnNova);
 
         return buildHeader("Equipas",
@@ -86,9 +81,9 @@ public class EquipasPanel extends BasePanel {
     private JPanel buildCorpo() {
         JPanel corpo = new JPanel(new BorderLayout(0, 12));
         corpo.setOpaque(false);
-        corpo.add(buildBarraFiltros(), BorderLayout.NORTH);
+        corpo.add(buildSurface(buildBarraFiltros(), new Insets(10, 12, 10, 12)), BorderLayout.NORTH);
         corpo.add(buildAreaTabela(),   BorderLayout.CENTER);
-        corpo.add(buildBarraAcoes(),   BorderLayout.SOUTH);
+        corpo.add(buildSurface(buildBarraAcoes(), new Insets(10, 12, 10, 12)), BorderLayout.SOUTH);
         return corpo;
     }
 
@@ -170,10 +165,10 @@ public class EquipasPanel extends BasePanel {
         JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         barra.setOpaque(false);
 
-        JButton btnDetalhe  = buildSmallButton("🔍 Ver Detalhe");
-        JButton btnMembros  = buildSmallButton("👥 Gerir Membros");
-        JButton btnToggle   = buildSmallButton("⏸ Ativar/Desativar");
-        JButton btnEliminar = buildSmallButton("🗑 Eliminar");
+        JButton btnDetalhe  = buildSmallButton("Ver Detalhe");
+        JButton btnMembros  = buildSmallButton("Gerir Membros");
+        JButton btnToggle   = buildSmallButton("Ativar/Desativar");
+        JButton btnEliminar = buildSmallButton("Eliminar");
 
         btnEliminar.setForeground(UIConstants.COLOR_DANGER);
 
@@ -187,6 +182,11 @@ public class EquipasPanel extends BasePanel {
         barra.add(btnToggle);
         barra.add(Box.createHorizontalStrut(12));
         barra.add(btnEliminar);
+        JLabel hint = new JLabel("Duplo clique para abrir detalhe da equipa");
+        hint.setFont(hint.getFont().deriveFont(UIConstants.FONT_SMALL));
+        hint.setForeground(UIManager.getColor("Label.disabledForeground"));
+        barra.add(Box.createHorizontalStrut(10));
+        barra.add(hint);
 
         return barra;
     }
@@ -519,7 +519,7 @@ public class EquipasPanel extends BasePanel {
         JScrollPane scrollActuais = new JScrollPane(listaActuais);
         scrollActuais.setPreferredSize(new Dimension(0, 130));
 
-        JButton btnRemover = buildSmallButton("✕ Remover seleccionado");
+        JButton btnRemover = buildSmallButton("Remover seleccionado");
         btnRemover.setForeground(UIConstants.COLOR_DANGER);
         btnRemover.addActionListener(e -> {
             int idx = listaActuais.getSelectedIndex();
@@ -588,13 +588,27 @@ public class EquipasPanel extends BasePanel {
                 lblErroAdd.setText(" ");
             } catch (Exception ex) {
                 lblErroAdd.setText(ex.getMessage());
+                ex.printStackTrace();
             }
         });
 
-        JPanel addRow = new JPanel(new BorderLayout(8, 0));
+        comboFunc.setPreferredSize(new Dimension(360, 34));
+        btnAdicionar.setPreferredSize(new Dimension(120, 34));
+
+        JPanel addRow = new JPanel(new GridBagLayout());
         addRow.setOpaque(false);
-        addRow.add(comboFunc,   BorderLayout.CENTER);
-        addRow.add(btnAdicionar, BorderLayout.EAST);
+        GridBagConstraints addC = new GridBagConstraints();
+        addC.gridx = 0;
+        addC.gridy = 0;
+        addC.weightx = 1.0;
+        addC.fill = GridBagConstraints.HORIZONTAL;
+        addC.insets = new Insets(0, 0, 0, 8);
+        addRow.add(comboFunc, addC);
+        addC.gridx = 1;
+        addC.weightx = 0;
+        addC.fill = GridBagConstraints.NONE;
+        addC.insets = new Insets(0, 0, 0, 0);
+        addRow.add(btnAdicionar, addC);
 
         // ── Montar painel ───────────────────────────────────────────────────
         JPanel corpo = new JPanel();

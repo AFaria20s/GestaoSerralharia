@@ -10,6 +10,8 @@ import com.afonso.gestaoSerralharia.repositories.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -19,6 +21,7 @@ public class EncomendaService {
     private final EncomendaRepository encomendaRepository;
     private final LinhaencomendaRepository linhaencomendaRepository;
     private final MaterialRepository materialRepository;
+    private final MovimentofinanceiroService movimentofinanceiroService;
 
     public List<Encomenda> listarTodos() {
         return encomendaRepository.findAll();
@@ -54,6 +57,18 @@ public class EncomendaService {
             Material material = linha.getIdMaterial();
             material.setStockAtual(material.getStockAtual() + linha.getQuantidade());
             materialRepository.save(material);
+
+            BigDecimal custoLinha = (linha.getPrecoCustoUnit() != null ? linha.getPrecoCustoUnit() : BigDecimal.ZERO)
+                    .multiply(BigDecimal.valueOf(linha.getQuantidade() != null ? linha.getQuantidade() : 0));
+            if (custoLinha.signum() > 0) {
+                movimentofinanceiroService.registar(
+                        LocalDate.now(),
+                        "PERDA",
+                        "ENCOMENDA",
+                        "Receção encomenda #" + encomenda.getId() + " - " + (material.getNome() != null ? material.getNome() : "material"),
+                        custoLinha.negate()
+                );
+            }
         }
         encomenda.setEntregue(true);
         return encomendaRepository.save(encomenda);

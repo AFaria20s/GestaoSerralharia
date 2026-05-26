@@ -94,13 +94,8 @@ public class TarefasAdminPanel extends BasePanel {
         btnNova.setBorderPainted(false);
         btnNova.addActionListener(e -> abrirDialogoNova());
 
-        JButton btnRefresh = buildButton("↻");
-        btnRefresh.setToolTipText("Actualizar tarefas");
-        btnRefresh.addActionListener(e -> carregar());
-
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acoes.setOpaque(false);
-        acoes.add(btnRefresh);
         acoes.add(btnNova);
 
         return buildHeader("Tarefas",
@@ -115,9 +110,9 @@ public class TarefasAdminPanel extends BasePanel {
 
         JPanel centro = new JPanel(new BorderLayout(0, 12));
         centro.setOpaque(false);
-        centro.add(buildFiltersBar(), BorderLayout.NORTH);
+        centro.add(buildSurface(buildFiltersBar(), new Insets(10, 12, 10, 12)), BorderLayout.NORTH);
         centro.add(buildTableArea(), BorderLayout.CENTER);
-        centro.add(buildActionsBar(), BorderLayout.SOUTH);
+        centro.add(buildSurface(buildActionsBar(), new Insets(10, 12, 10, 12)), BorderLayout.SOUTH);
 
         body.add(centro, BorderLayout.CENTER);
         return body;
@@ -285,11 +280,11 @@ public class TarefasAdminPanel extends BasePanel {
         JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         barra.setOpaque(false);
 
-        JButton btnDetalhe = buildSmallButton("🔍 Ver detalhe");
-        JButton btnEditar = buildSmallButton("✏ Editar");
-        JButton btnEstado = buildSmallButton("⟳ Alterar estado");
-        JButton btnReatribuir = buildSmallButton("👤 Reatribuir");
-        JButton btnEliminar = buildSmallButton("🗑 Eliminar");
+        JButton btnDetalhe = buildSmallButton("Ver detalhe");
+        JButton btnEditar = buildSmallButton("Editar");
+        JButton btnEstado = buildSmallButton("Alterar estado");
+        JButton btnReatribuir = buildSmallButton("Reatribuir");
+        JButton btnEliminar = buildSmallButton("Eliminar");
 
         btnEliminar.setForeground(UIConstants.COLOR_DANGER);
 

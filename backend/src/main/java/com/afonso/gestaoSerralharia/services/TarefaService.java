@@ -3,9 +3,7 @@ package com.afonso.gestaoSerralharia.services;
 import com.afonso.gestaoSerralharia.models.Funcionario;
 import com.afonso.gestaoSerralharia.models.Equipa;
 import com.afonso.gestaoSerralharia.models.Obra;
-import com.afonso.gestaoSerralharia.models.Orcamento;
 import com.afonso.gestaoSerralharia.models.Tarefa;
-import com.afonso.gestaoSerralharia.repositories.OrcamentoRepository;
 import com.afonso.gestaoSerralharia.repositories.TarefaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +16,6 @@ import java.util.List;
 public class TarefaService {
 
     private final TarefaRepository tarefaRepository;
-    private final OrcamentoRepository orcamentoRepository;
     private final EquipafuncionarioService equipafuncionarioService;
 
     public List<Tarefa> listarTodos() {
@@ -60,9 +57,6 @@ public class TarefaService {
             throw new IllegalStateException("A equipa escolhida não pertence à obra da tarefa");
         if (!equipafuncionarioService.pertenceAEquipa(tarefa.getIdEquipa(), tarefa.getIdFuncionario()))
             throw new IllegalStateException("O funcionário atribuído não pertence à equipa selecionada");
-        Orcamento orcamento = orcamentoRepository.findFirstByIdObraAndAprovadoTrueOrderByVersaoDesc(tarefa.getIdObra()).orElse(null);
-        if (orcamento == null || !orcamento.getAprovado())
-            throw new IllegalStateException("Só é possível criar tarefas em obras com orçamento aprovado");
         return tarefaRepository.save(tarefa);
     }
 

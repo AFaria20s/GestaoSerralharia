@@ -67,14 +67,14 @@ public class FaturacaoPanel extends BasePanel {
     private JPanel buildCorpo() {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
-        panel.add(buildBarra(),       BorderLayout.NORTH);
+        panel.add(buildSurface(buildBarra(), new Insets(10, 12, 10, 12)), BorderLayout.NORTH);
         panel.add(buildAreaTabela(),  BorderLayout.CENTER);
-        panel.add(buildRodape(),      BorderLayout.SOUTH);
+        panel.add(buildSurface(buildRodape(), new Insets(10, 12, 10, 12)), BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel buildBarra() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         bar.setOpaque(false);
 
         LinkedHashSet<String> opcoesEstado = new LinkedHashSet<>();
@@ -89,7 +89,9 @@ public class FaturacaoPanel extends BasePanel {
         filtroEstado = new JComboBox<>(opcoesEstado.toArray(new String[0]));
         filtroEstado.addActionListener(e -> carregarTabela((String) filtroEstado.getSelectedItem()));
 
-        bar.add(new JLabel("Estado:"));
+        JLabel lbl = new JLabel("Estado:");
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, UIConstants.FONT_FIELD_LABEL));
+        bar.add(lbl);
         bar.add(filtroEstado);
         return bar;
     }
@@ -334,8 +336,15 @@ public class FaturacaoPanel extends BasePanel {
         catch (Exception ex) { mostrarErro(null, ex.getMessage()); return; }
 
         JDialog dlg = criarDialogo("Detalhe da Fatura #" + fatura.getId());
-        dlg.add(new DetalhePanel(fatura));
-        dlg.pack();
+        DetalhePanel detalhe = new DetalhePanel(fatura);
+        JScrollPane scroll = new JScrollPane(detalhe);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        dlg.setContentPane(scroll);
+        dlg.setSize(new Dimension(860, 680));
+        dlg.setMinimumSize(new Dimension(760, 560));
         dlg.setResizable(true);
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);

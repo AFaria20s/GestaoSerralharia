@@ -7,6 +7,7 @@ import com.afonso.gestaoSerralharia.models.Funcionario;
 import com.afonso.gestaoSerralharia.repositories.EquipafuncionarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,6 +23,14 @@ public class EquipafuncionarioService {
     public List<Equipafuncionario> buscarPorFuncionario(Funcionario funcionario) { return equipafuncionarioRepository.findByIdFuncionario(funcionario); }
     public Equipafuncionario guardar(Equipafuncionario ef) { return equipafuncionarioRepository.save(ef); }
     public void eliminar(EquipafuncionarioId id) { equipafuncionarioRepository.deleteById(id); }
+    @Transactional
+    public void adicionarMembro(Integer idEquipa, Integer idFuncionario) {
+        EquipafuncionarioId id = new EquipafuncionarioId();
+        id.setIdEquipa(idEquipa);
+        id.setIdFuncionario(idFuncionario);
+        if (equipafuncionarioRepository.existsById(id)) return;
+        equipafuncionarioRepository.inserir(idEquipa, idFuncionario);
+    }
 
     public boolean pertenceAEquipa(Equipa equipa, Funcionario funcionario) {
         if (equipa == null || funcionario == null) return false;

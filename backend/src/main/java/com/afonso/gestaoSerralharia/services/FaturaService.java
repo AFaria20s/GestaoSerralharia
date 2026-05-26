@@ -41,6 +41,7 @@ public class FaturaService {
     private final EstadopagamentoRepository estadopagamentoRepository;
     private final FaturaResumoIvaRepository faturaResumoIvaRepository;
     private final PagamentoFaturaRepository pagamentoFaturaRepository;
+    private final MovimentofinanceiroService movimentofinanceiroService;
 
     public List<Fatura> listarTodos() {
         return faturaRepository.findAll();
@@ -172,7 +173,15 @@ public class FaturaService {
         pagamento.setObservacoes(observacoes != null && !observacoes.isBlank() ? observacoes.trim() : null);
         pagamentoFaturaRepository.save(pagamento);
 
-        return recalcularPagamentosEEstado(fatura);
+        Fatura atualizada = recalcularPagamentosEEstado(fatura);
+        movimentofinanceiroService.registar(
+                dataPagamento,
+                "GANHO",
+                "FATURA",
+                "Pagamento fatura " + (atualizada.getCodigoDocumento() != null ? atualizada.getCodigoDocumento() : ("#" + atualizada.getId())),
+                valorNormalizado
+        );
+        return atualizada;
     }
 
     public BigDecimal totalFaturado(Obra obra) {

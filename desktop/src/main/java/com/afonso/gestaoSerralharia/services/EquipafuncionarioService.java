@@ -32,8 +32,9 @@ public class EquipafuncionarioService{
         return buscarPorEquipaId(equipa.getId());
     }
     public Equipafuncionario guardar(Equipafuncionario ef) {
-        return api.post("/api/equipas/" + ef.getIdEquipa().getId() + "/membros/" + ef.getIdFuncionario().getId(),
-                null, Equipafuncionario.class);
+        api.post("/api/equipas/" + ef.getIdEquipa().getId() + "/membros/" + ef.getIdFuncionario().getId(),
+                null, Void.class);
+        return ef;
     }
     public void eliminar(EquipafuncionarioId id) {
         api.delete("/api/equipas/" + id.getIdEquipa() + "/membros/" + id.getIdFuncionario());

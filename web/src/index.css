@@ -1,14 +1,13 @@
 :root {
-  --ui-bg: #f5f5f5;
-  --ui-surface: #f3f3f3;
-  --ui-border: #dddddd;
-  --ui-text: #111111;
-  --ui-muted: #6e6e6e;
-  --ui-blue: #6fc0e9;
-  --ui-green: #1ab64b;
-  --ui-red: #e94652;
-  --ui-yellow: #d5a701;
-  --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --ui-bg: #f2f4f7;
+  --ui-surface: #ffffff;
+  --ui-border: #d0d7e2;
+  --ui-text: #1b2430;
+  --ui-muted: #5b6877;
+  --ui-primary: #0f6dff;
+  --ui-primary-dark: #0a58cf;
+  --ui-danger: #c64040;
+  --font-base: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 * {
@@ -24,6 +23,196 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font-family: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.login-root {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  padding: 24px;
+  display: grid;
+  gap: 10px;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.login-card p {
+  margin: 0 0 8px;
+  color: var(--ui-muted);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+
+.sidebar {
+  background: #192433;
+  color: #f0f4fa;
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+}
+
+.brand h2,
+.brand small {
+  margin: 0;
+}
+
+.brand small {
+  color: #a7b4c7;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.nav-btn {
+  border: 1px solid #314258;
+  background: transparent;
+  color: #eaf1fb;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nav-btn.active {
+  background: #2a3a50;
+  border-color: #4b6382;
+}
+
+.logout-btn {
+  border: 1px solid #4a5f79;
+  background: transparent;
+  color: #f4f7fc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.content {
+  padding: 24px;
+  overflow: auto;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.content-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.panel {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.panel h3 {
+  margin-top: 0;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.chip {
+  border: 1px solid var(--ui-border);
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--ui-primary);
+  color: var(--ui-primary);
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.list-item {
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.list-item h4,
+.list-item p {
+  margin: 0 0 6px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 8px;
+}
+
+input,
+select,
+textarea,
+button {
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  padding: 9px 10px;
+}
+
+button {
+  background: var(--ui-primary);
+  color: #fff;
+  border-color: var(--ui-primary-dark);
+  cursor: pointer;
+}
+
+.error {
+  background: #fff1f1;
+  border: 1px solid #f1c2c2;
+  color: var(--ui-danger);
+  padding: 9px 10px;
+  border-radius: 6px;
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    grid-template-rows: auto auto auto;
+  }
 }

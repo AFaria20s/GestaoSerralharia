@@ -19,6 +19,7 @@ import com.afonso.gestaoSerralharia.services.GravidadeproblemaService;
 import com.afonso.gestaoSerralharia.services.LinhaencomendaService;
 import com.afonso.gestaoSerralharia.services.LinhaorcamentoService;
 import com.afonso.gestaoSerralharia.services.MaterialService;
+import com.afonso.gestaoSerralharia.services.MovimentofinanceiroService;
 import com.afonso.gestaoSerralharia.services.ObraService;
 import com.afonso.gestaoSerralharia.services.OrcamentoService;
 import com.afonso.gestaoSerralharia.services.ProblemaService;
@@ -63,6 +64,7 @@ public class DesktopApplication implements CommandLineRunner {
     private final EncomendaService encomendaService;
     private final LinhaencomendaService linhaEncomendaService;
     private final EstadotarefaService estadotarefaService;
+    private final MovimentofinanceiroService movimentofinanceiroService;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(DesktopApplication.class)
@@ -80,6 +82,6 @@ public class DesktopApplication implements CommandLineRunner {
                         linhaorcamentoService, taxaivaService, tipolinhaorcamentoService, gravidadeproblemaService,
                         equipafuncionarioService, equipaService, estadopagamentoService,
                         materialService, fornecedorService, encomendaService, linhaEncomendaService,
-                        estadotarefaService));
+                        estadotarefaService, movimentofinanceiroService));
     }
 }

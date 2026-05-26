@@ -4,6 +4,7 @@ import com.afonso.gestaoSerralharia.GUI.UIConstants;
 import com.afonso.gestaoSerralharia.GUI.panels.BasePanel;
 import com.afonso.gestaoSerralharia.config.SessionManager;
 import com.afonso.gestaoSerralharia.models.Fatura;
+import com.afonso.gestaoSerralharia.models.FinanceiroSeriePonto;
 import com.afonso.gestaoSerralharia.models.Obra;
 import com.afonso.gestaoSerralharia.models.Orcamento;
 import com.afonso.gestaoSerralharia.models.Tarefa;
@@ -15,6 +16,7 @@ import com.afonso.gestaoSerralharia.services.OrcamentoService;
 import com.afonso.gestaoSerralharia.services.ProblemaService;
 import com.afonso.gestaoSerralharia.services.TarefaService;
 import com.afonso.gestaoSerralharia.services.VisitaService;
+import com.afonso.gestaoSerralharia.services.MovimentofinanceiroService;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -36,6 +38,7 @@ public class DashboardPanel extends BasePanel {
     private final TarefaService tarefaService;
     private final FaturaService faturaService;
     private final OrcamentoService orcamentoService;
+    private final MovimentofinanceiroService movimentofinanceiroService;
 
     private JLabel lblObrasValor;
     private JLabel lblObrasSubtitulo;
@@ -45,23 +48,24 @@ public class DashboardPanel extends BasePanel {
     private JLabel lblFaturasSubtitulo;
     private JLabel lblOrcamentosValor;
     private JLabel lblOrcamentosSubtitulo;
+    private FinanceiroChartPanel financeiroChartPanel;
+    private JComboBox<String> filtroPeriodoFinanceiro;
 
     public DashboardPanel(ObraService obraService, TarefaService tarefaService,
                           FaturaService faturaService, ProblemaService problemaService,
                           ClienteService clienteService, FuncionarioService funcionarioService,
-                          OrcamentoService orcamentoService, VisitaService visitaService) {
+                          OrcamentoService orcamentoService, VisitaService visitaService,
+                          MovimentofinanceiroService movimentofinanceiroService) {
         this.obraService      = obraService;
         this.tarefaService    = tarefaService;
         this.faturaService    = faturaService;
         this.orcamentoService = orcamentoService;
+        this.movimentofinanceiroService = movimentofinanceiroService;
 
         String nome = SessionManager.getInstance().getNome();
         String saudacao = saudacao() + (nome != null && !nome.isBlank() ? ", " + nome.split(" ")[0] : "");
 
-        JButton btnRefresh = buildButton("Atualizar");
-        btnRefresh.addActionListener(e -> carregar());
-
-        add(buildHeader("Dashboard", saudacao, btnRefresh), BorderLayout.NORTH);
+        add(buildHeader("Dashboard", saudacao), BorderLayout.NORTH);
         add(buildScroll(), BorderLayout.CENTER);
         carregar();
     }
@@ -73,6 +77,8 @@ public class DashboardPanel extends BasePanel {
         corpo.setBorder(new EmptyBorder(0, 0, 16, 0));
 
         corpo.add(buildSecaoKpi());
+        corpo.add(Box.createVerticalStrut(16));
+        corpo.add(buildSecaoFinanceira());
 
         JScrollPane scroll = new JScrollPane(corpo);
         scroll.setBorder(BorderFactory.createEmptyBorder());
@@ -81,6 +87,37 @@ public class DashboardPanel extends BasePanel {
         scroll.getViewport().setOpaque(false);
         scroll.setOpaque(false);
         return scroll;
+    }
+
+    private JPanel buildSecaoFinanceira() {
+        JPanel card = new JPanel(new BorderLayout(0, 8));
+        card.setOpaque(true);
+        card.setBackground(UIManager.getColor("Panel.background"));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(borderColor(), 1, true),
+                new EmptyBorder(14, 16, 14, 16)));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
+
+        JLabel titulo = new JLabel("Ganhos vs perdas");
+        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 14f));
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.setOpaque(false);
+        topo.add(titulo, BorderLayout.WEST);
+
+        filtroPeriodoFinanceiro = new JComboBox<>(new String[]{"30 dias", "90 dias", "180 dias", "365 dias", "Histórico completo"});
+        filtroPeriodoFinanceiro.setSelectedItem("180 dias");
+        filtroPeriodoFinanceiro.addActionListener(e -> carregarFinanceiro());
+        JPanel filtroWrap = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        filtroWrap.setOpaque(false);
+        filtroWrap.add(filtroPeriodoFinanceiro);
+        topo.add(filtroWrap, BorderLayout.EAST);
+        card.add(topo, BorderLayout.NORTH);
+
+        financeiroChartPanel = new FinanceiroChartPanel();
+        financeiroChartPanel.setPreferredSize(new Dimension(900, 240));
+        card.add(financeiroChartPanel, BorderLayout.CENTER);
+        return card;
     }
 
     private JPanel buildSecaoKpi() {
@@ -149,6 +186,26 @@ public class DashboardPanel extends BasePanel {
 
     private void carregar() {
         carregarKpis();
+        carregarFinanceiro();
+    }
+
+    private void carregarFinanceiro() {
+        int dias = diasFiltroFinanceiro();
+        List<FinanceiroSeriePonto> serie = movimentofinanceiroService.serie(dias);
+        financeiroChartPanel.setSerie(serie);
+    }
+
+    private int diasFiltroFinanceiro() {
+        String v = filtroPeriodoFinanceiro != null ? (String) filtroPeriodoFinanceiro.getSelectedItem() : "180 dias";
+        if (v == null) return 180;
+        return switch (v) {
+            case "30 dias" -> 30;
+            case "90 dias" -> 90;
+            case "180 dias" -> 180;
+            case "365 dias" -> 365;
+            case "Histórico completo" -> 0;
+            default -> 180;
+        };
     }
 
     private void carregarKpis() {
@@ -238,5 +295,70 @@ public class DashboardPanel extends BasePanel {
         if (h < 12) return "Bom dia";
         if (h < 19) return "Boa tarde";
         return "Boa noite";
+    }
+
+    private static class FinanceiroChartPanel extends JPanel {
+        private List<FinanceiroSeriePonto> serie = List.of();
+
+        void setSerie(List<FinanceiroSeriePonto> novaSerie) {
+            this.serie = novaSerie != null ? novaSerie : List.of();
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth();
+                int h = getHeight();
+                int l = 42, r = 18, t = 16, b = 28;
+                g2.setColor(new Color(148, 163, 184));
+                g2.drawRect(l, t, w - l - r, h - t - b);
+
+                if (serie.isEmpty()) {
+                    g2.setColor(new Color(100, 116, 139));
+                    g2.drawString("Sem movimentos financeiros no período.", l + 12, t + 24);
+                    return;
+                }
+
+                java.math.BigDecimal maxAbs = java.math.BigDecimal.ONE;
+                for (FinanceiroSeriePonto p : serie) {
+                    java.math.BigDecimal s = p.getSaldo() != null ? p.getSaldo().abs() : java.math.BigDecimal.ZERO;
+                    if (s.compareTo(maxAbs) > 0) maxAbs = s;
+                }
+                double max = maxAbs.doubleValue();
+                int plotW = w - l - r;
+                int plotH = h - t - b;
+                int zeroY = t + plotH / 2;
+
+                g2.setColor(new Color(203, 213, 225));
+                g2.drawLine(l, zeroY, l + plotW, zeroY);
+
+                int prevX = -1, prevY = -1;
+                for (int i = 0; i < serie.size(); i++) {
+                    FinanceiroSeriePonto p = serie.get(i);
+                    double saldo = p.getSaldo() != null ? p.getSaldo().doubleValue() : 0d;
+                    int x = l + (int) ((i / (double) Math.max(1, serie.size() - 1)) * plotW);
+                    int y = zeroY - (int) ((saldo / max) * (plotH * 0.45));
+
+                    g2.setColor(saldo >= 0 ? new Color(22, 163, 74) : new Color(220, 38, 38));
+                    g2.fillOval(x - 2, y - 2, 4, 4);
+                    if (prevX >= 0) {
+                        g2.setColor(new Color(59, 130, 246));
+                        g2.drawLine(prevX, prevY, x, y);
+                    }
+                    prevX = x;
+                    prevY = y;
+                }
+
+                g2.setColor(new Color(71, 85, 105));
+                g2.drawString("-" + maxAbs.setScale(0, java.math.RoundingMode.HALF_UP) + "€", 6, t + plotH - 2);
+                g2.drawString("+" + maxAbs.setScale(0, java.math.RoundingMode.HALF_UP) + "€", 6, t + 10);
+            } finally {
+                g2.dispose();
+            }
+        }
     }
 }

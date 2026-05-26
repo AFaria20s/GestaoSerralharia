@@ -3,7 +3,9 @@ package com.afonso.gestaoSerralharia.GUI.panels;
 import com.afonso.gestaoSerralharia.GUI.UIConstants;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
 import java.awt.*;
 
 public abstract class BasePanel extends JPanel {
@@ -19,9 +21,11 @@ public abstract class BasePanel extends JPanel {
     }
 
     protected JPanel buildHeader(String titulo, String subtitulo, JComponent acaoDireita) {
-        JPanel header = new JPanel(new BorderLayout());
+        JPanel header = new JPanel(new BorderLayout(0, 8));
         header.setOpaque(false);
-        header.setBorder(new EmptyBorder(0, 0, UIConstants.HEADER_MARGIN_BOTTOM, 0));
+        header.setBorder(new CompoundBorder(
+                new MatteBorder(0, 0, 1, 0, new Color(226, 232, 242)),
+                new EmptyBorder(0, 0, UIConstants.HEADER_MARGIN_BOTTOM - 6, 0)));
 
         boolean temSubtitulo = subtitulo != null && !subtitulo.isBlank();
         JPanel left = new JPanel(new GridLayout(temSubtitulo ? 2 : 1, 1, 0, 3));
@@ -63,8 +67,9 @@ public abstract class BasePanel extends JPanel {
 
         JScrollPane scroll = new JScrollPane(table);
         Color borderColor = UIManager.getColor("Component.borderColor");
-        scroll.setBorder(BorderFactory.createLineBorder(
-                borderColor != null ? borderColor : new Color(226, 232, 240)));
+        scroll.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor != null ? borderColor : new Color(226, 232, 240)),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         return scroll;
     }
 
@@ -72,6 +77,7 @@ public abstract class BasePanel extends JPanel {
         JButton btn = new JButton(texto);
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.putClientProperty("JButton.buttonType", "roundRect");
         return btn;
     }
 
@@ -91,5 +97,33 @@ public abstract class BasePanel extends JPanel {
         lbl.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(lbl, BorderLayout.CENTER);
         return panel;
+    }
+
+    protected JPanel buildSurface(JComponent content, Insets padding) {
+        JPanel surface = new JPanel(new BorderLayout());
+        surface.setOpaque(true);
+        surface.setBackground(Color.WHITE);
+        surface.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(223, 229, 239)),
+                new EmptyBorder(padding)));
+        surface.add(content, BorderLayout.CENTER);
+        return surface;
+    }
+
+    public void onPanelShown() {
+        String[] nomes = {"carregar", "carregarTabela", "refresh"};
+        for (String nome : nomes) {
+            try {
+                var method = getClass().getDeclaredMethod(nome);
+                method.setAccessible(true);
+                method.invoke(this);
+                break;
+            } catch (NoSuchMethodException ignored) {
+            } catch (Exception ignored) {
+                break;
+            }
+        }
+        revalidate();
+        repaint();
     }
 }

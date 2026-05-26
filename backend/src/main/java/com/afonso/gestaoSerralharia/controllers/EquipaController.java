@@ -6,7 +6,6 @@ import com.afonso.gestaoSerralharia.models.EquipafuncionarioId;
 import com.afonso.gestaoSerralharia.models.Obra;
 import com.afonso.gestaoSerralharia.services.EquipaService;
 import com.afonso.gestaoSerralharia.services.EquipafuncionarioService;
-import com.afonso.gestaoSerralharia.services.FuncionarioService;
 import com.afonso.gestaoSerralharia.services.ObraService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,6 @@ public class EquipaController {
     private final EquipaService equipaService;
     private final EquipafuncionarioService equipafuncionarioService;
     private final ObraService obraService;
-    private final FuncionarioService funcionarioService;
 
     @GetMapping
     public List<Equipa> listar() {
@@ -71,13 +69,11 @@ public class EquipaController {
     }
 
     @PostMapping("/{idEquipa}/membros/{idFuncionario}")
-    public ResponseEntity<Equipafuncionario> adicionarMembro(
+    public ResponseEntity<Void> adicionarMembro(
             @PathVariable Integer idEquipa,
             @PathVariable Integer idFuncionario) {
-        Equipafuncionario ef = new Equipafuncionario();
-        ef.setIdEquipa(equipaService.buscarPorId(idEquipa));
-        ef.setIdFuncionario(funcionarioService.buscarPorId(idFuncionario));
-        return ResponseEntity.ok(equipafuncionarioService.guardar(ef));
+        equipafuncionarioService.adicionarMembro(idEquipa, idFuncionario);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{idEquipa}/membros/{idFuncionario}")

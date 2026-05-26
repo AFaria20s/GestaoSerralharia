@@ -48,6 +48,7 @@ public class OrcamentosPanel extends BasePanel {
     private final OrcamentoService          orcamentoService;
     private final LinhaorcamentoService     linhaorcamentoService;
     private final ObraService               obraService;
+    private final MaterialService           materialService;
     private final TaxaivaService            taxaivaService;
     private final TipolinhaorcamentoService tipoService;
 
@@ -75,11 +76,13 @@ public class OrcamentosPanel extends BasePanel {
     public OrcamentosPanel(OrcamentoService orcamentoService,
                            LinhaorcamentoService linhaorcamentoService,
                            ObraService obraService,
+                           MaterialService materialService,
                            TaxaivaService taxaivaService,
                            TipolinhaorcamentoService tipoService) {
         this.orcamentoService      = orcamentoService;
         this.linhaorcamentoService = linhaorcamentoService;
         this.obraService           = obraService;
+        this.materialService       = materialService;
         this.taxaivaService        = taxaivaService;
         this.tipoService           = tipoService;
 
@@ -1087,6 +1090,7 @@ public class OrcamentosPanel extends BasePanel {
         private final JComboBox<String>             comboGrupo;
         private final JTextField                    campoNome;
         private final JComboBox<Tipolinhaorcamento> comboTipo;
+        private final JComboBox<Material>           comboMaterial;
         private final JComboBox<Taxaiva>            comboIva;
         private final JTextField                    campoQtd;
         private final JTextField                    campoPreco;
@@ -1122,6 +1126,19 @@ public class OrcamentosPanel extends BasePanel {
                 }
             });
 
+            List<Material> materiais = materialService.listarTodos();
+            comboMaterial = new JComboBox<>();
+            comboMaterial.addItem(null);
+            for (Material m : materiais) comboMaterial.addItem(m);
+            comboMaterial.setRenderer(new DefaultListCellRenderer() {
+                @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                    super.getListCellRendererComponent(l, v, i, s, f);
+                    if (v == null) setText("Sem material associado");
+                    else if (v instanceof Material m) setText(m.getNome() + " (Stock: " + (m.getStockAtual() != null ? m.getStockAtual() : 0) + ")");
+                    return this;
+                }
+            });
+
             List<Taxaiva> taxas = taxaivaService.listarTodos();
             comboIva = new JComboBox<>(taxas.toArray(new Taxaiva[0]));
             comboIva.setRenderer(new DefaultListCellRenderer() {
@@ -1142,12 +1159,27 @@ public class OrcamentosPanel extends BasePanel {
                         : "0");
                 if (existente.getIdTipoLinhaorcamento() != null)
                     for (int i = 0; i < tipos.size(); i++) if (tipos.get(i).getId().equals(existente.getIdTipoLinhaorcamento().getId())) { comboTipo.setSelectedIndex(i); break; }
+                if (existente.getIdMaterial() != null) {
+                    for (int i = 0; i < comboMaterial.getItemCount(); i++) {
+                        Material m = comboMaterial.getItemAt(i);
+                        if (m != null && m.getId().equals(existente.getIdMaterial().getId())) {
+                            comboMaterial.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
                 if (existente.getIdIva() != null)
                     for (int i = 0; i < taxas.size(); i++) if (taxas.get(i).getId().equals(existente.getIdIva().getId())) { comboIva.setSelectedIndex(i); break; }
             } else {
                 campoQtd.setText("1");
                 campoDesconto.setText("0");
             }
+
+            comboMaterial.addActionListener(e -> {
+                Object sel = comboMaterial.getSelectedItem();
+                if (!(sel instanceof Material m)) return;
+                if (campoNome.getText().trim().isBlank()) campoNome.setText(m.getNome());
+            });
 
             // Nota explicativa sobre grupos
             JLabel lblDica = new JLabel("<html><i>Escolhe um grupo existente ou escreve um novo. Linhas do mesmo grupo aparecem agrupadas no PDF do cliente.</i></html>");
@@ -1160,11 +1192,12 @@ public class OrcamentosPanel extends BasePanel {
 
             addField(corpo, c, 1, "Grupo / Janela  (opcional)", comboGrupo);
             addField(corpo, c, 2, "Descrição do item *",        campoNome);
-            addField(corpo, c, 3, "Tipo de linha",              comboTipo);
-            addField(corpo, c, 4, "Taxa de IVA",                comboIva);
-            addField(corpo, c, 5, "Quantidade *",               campoQtd);
-            addField(corpo, c, 6, "Preço unitário (€) *",       campoPreco);
-            addField(corpo, c, 7, "Desconto (%)",               campoDesconto);
+            addField(corpo, c, 3, "Material (opcional)",        comboMaterial);
+            addField(corpo, c, 4, "Tipo de linha",              comboTipo);
+            addField(corpo, c, 5, "Taxa de IVA",                comboIva);
+            addField(corpo, c, 6, "Quantidade *",               campoQtd);
+            addField(corpo, c, 7, "Preço unitário (€) *",       campoPreco);
+            addField(corpo, c, 8, "Desconto (%)",               campoDesconto);
 
             lblErro = new JLabel(" ");
             lblErro.setForeground(UIConstants.COLOR_DANGER);
@@ -1238,6 +1271,9 @@ public class OrcamentosPanel extends BasePanel {
             l.setQuantidade(new BigDecimal(campoQtd.getText().trim().replace(',', '.')));
             l.setPrecoUnit(new BigDecimal(campoPreco.getText().trim().replace(',', '.')));
             l.setDescontoPercentagem(new BigDecimal(campoDesconto.getText().trim().replace(',', '.')));
+            if (comboMaterial.getSelectedItem() instanceof Material m) {
+                l.setIdMaterial(m);
+            }
             if (comboTipo.getSelectedItem() instanceof Tipolinhaorcamento t) l.setIdTipoLinhaorcamento(t);
             if (comboIva.getSelectedItem() instanceof Taxaiva taxa) { l.setIdIva(taxa); l.setIvaPercentagemAplicada(taxa.getPercentagem()); }
             return l;

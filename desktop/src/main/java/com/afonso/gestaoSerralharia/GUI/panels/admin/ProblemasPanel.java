@@ -63,17 +63,12 @@ public class ProblemasPanel extends BasePanel {
     // ─────────────────────────────────────────────────────────────────────────
 
     private JPanel buildHeader() {
-        JButton btnRefresh = buildButton("↻");
-        btnRefresh.setToolTipText("Actualizar lista");
-        btnRefresh.addActionListener(e -> carregar());
-
-        JButton btnEliminar = buildButton("🗑 Eliminar");
+        JButton btnEliminar = buildButton("Eliminar");
         btnEliminar.setForeground(UIConstants.COLOR_DANGER);
         btnEliminar.addActionListener(e -> eliminarSelecionado());
 
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acoes.setOpaque(false);
-        acoes.add(btnRefresh);
         acoes.add(btnEliminar);
 
         return buildHeader("Problemas",
