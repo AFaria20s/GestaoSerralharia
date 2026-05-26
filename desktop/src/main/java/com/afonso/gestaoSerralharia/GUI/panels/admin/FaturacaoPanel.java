@@ -51,7 +51,7 @@ public class FaturacaoPanel extends BasePanel {
         this.linhaorcamentoService  = linhaorcamentoService;
         this.estadopagamentoService = estadopagamentoService;
 
-        JButton btnEmitir = buildButton("+ Emitir Fatura");
+        JButton btnEmitir = buildButton("Emitir Fatura");
         btnEmitir.putClientProperty("JButton.buttonType", "roundRect");
         btnEmitir.setBackground(UIConstants.COLOR_ADMIN_ACCENT);
         btnEmitir.setForeground(Color.WHITE);
@@ -68,7 +68,7 @@ public class FaturacaoPanel extends BasePanel {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
         panel.add(buildSurface(buildBarra(), new Insets(10, 12, 10, 12)), BorderLayout.NORTH);
-        panel.add(buildAreaTabela(),  BorderLayout.CENTER);
+        panel.add(buildAreaTabela(), BorderLayout.CENTER);
         panel.add(buildSurface(buildRodape(), new Insets(10, 12, 10, 12)), BorderLayout.SOUTH);
         return panel;
     }
@@ -176,33 +176,22 @@ public class FaturacaoPanel extends BasePanel {
             String cliente = f.getClienteNome() != null && !f.getClienteNome().isBlank()
                     ? f.getClienteNome()
                     : (f.getIdObra() != null && f.getIdObra().getIdCliente() != null
-                    ? f.getIdObra().getIdCliente().getNome()
-                    : "—");
-            String data    = f.getDataEmissao() != null ? f.getDataEmissao().format(FMT) : "—";
+                       ? f.getIdObra().getIdCliente().getNome() : "—");
+            String data       = f.getDataEmissao()    != null ? f.getDataEmissao().format(FMT)    : "—";
             String vencimento = f.getDataVencimento() != null ? f.getDataVencimento().format(FMT) : "—";
-            String base = euros(faturaService.valorSubtotalSemIva(f));
-            String iva = euros(faturaService.valorIva(f));
-            String total   = euros(f.getValorTotalComIva());
-            String pago    = euros(f.getValorPago());
-            String saldo   = euros(faturaService.saldoEmDivida(f));
-            String documento = f.getCodigoDocumento() != null && !f.getCodigoDocumento().isBlank()
-                    ? f.getCodigoDocumento()
-                    : "FT-" + f.getId();
+            String base       = euros(faturaService.valorSubtotalSemIva(f));
+            String iva        = euros(faturaService.valorIva(f));
+            String total      = euros(f.getValorTotalComIva());
+            String pago       = euros(f.getValorPago());
+            String saldo      = euros(faturaService.saldoEmDivida(f));
+            String documento  = f.getCodigoDocumento() != null && !f.getCodigoDocumento().isBlank()
+                    ? f.getCodigoDocumento() : "FT-" + f.getId();
 
             modelo.addRow(new Object[]{
-                    f.getId(),
-                    documento,
+                    f.getId(), documento,
                     f.getNumeroParcela() != null ? f.getNumeroParcela() : 1,
-                    obra,
-                    cliente,
-                    data,
-                    vencimento,
-                    base,
-                    iva,
-                    total,
-                    pago,
-                    saldo,
-                    estado
+                    obra, cliente, data, vencimento,
+                    base, iva, total, pago, saldo, estado
             });
         }
     }
@@ -212,6 +201,8 @@ public class FaturacaoPanel extends BasePanel {
         if (row < 0) return null;
         return (Integer) modelo.getValueAt(tabela.convertRowIndexToModel(row), 0);
     }
+
+    // ── Helpers estáticos ─────────────────────────────────────────────────────
 
     private static String nomeObra(Obra o) {
         String d = o.getDescricao();
@@ -228,21 +219,20 @@ public class FaturacaoPanel extends BasePanel {
 
     private static String codigoOuFallback(Fatura fatura) {
         return fatura.getCodigoDocumento() != null && !fatura.getCodigoDocumento().isBlank()
-                ? fatura.getCodigoDocumento()
-                : "FT-" + fatura.getId();
+                ? fatura.getCodigoDocumento() : "FT-" + fatura.getId();
     }
 
     private static String prazoPagamentoTexto(Orcamento orcamento) {
-        int prazo = orcamento != null && orcamento.getPrazoPagamentoDias() != null && orcamento.getPrazoPagamentoDias() > 0
-                ? orcamento.getPrazoPagamentoDias()
-                : 30;
+        int prazo = orcamento != null
+                && orcamento.getPrazoPagamentoDias() != null
+                && orcamento.getPrazoPagamentoDias() > 0
+                ? orcamento.getPrazoPagamentoDias() : 30;
         return prazo + " dias";
     }
 
     // ── Emitir fatura ─────────────────────────────────────────────────────────
 
     private void abrirDialogoEmitir() {
-        // Obras com orçamento aprovado e saldo por faturar
         List<Obra> candidatas = new ArrayList<>(
                 orcamentoService.buscarAprovados().stream()
                         .map(Orcamento::getIdObra)
@@ -251,10 +241,7 @@ public class FaturacaoPanel extends BasePanel {
                                 .map(orc -> faturaService.saldoPorFaturar(o, orc).compareTo(BigDecimal.ZERO) > 0)
                                 .orElse(false))
                         .collect(java.util.stream.Collectors.toMap(
-                                Obra::getId,
-                                o -> o,
-                                (a, b) -> a,
-                                LinkedHashMap::new))
+                                Obra::getId, o -> o, (a, b) -> a, LinkedHashMap::new))
                         .values());
 
         if (candidatas.isEmpty()) {
@@ -269,7 +256,8 @@ public class FaturacaoPanel extends BasePanel {
         EmitirFaturaForm form = new EmitirFaturaForm(dlg, candidatas);
         dlg.add(form);
         dlg.pack();
-        dlg.setLocationRelativeTo(this);
+        dlg.setMinimumSize(new Dimension(480, 420));
+        dlg.setLocationRelativeTo(null);
         dlg.setVisible(true);
 
         if (form.confirmado()) {
@@ -307,7 +295,7 @@ public class FaturacaoPanel extends BasePanel {
         PagamentoForm form = new PagamentoForm(dlg, fatura, saldo);
         dlg.add(form);
         dlg.pack();
-        dlg.setLocationRelativeTo(this);
+        dlg.setLocationRelativeTo(null);
         dlg.setVisible(true);
 
         if (form.confirmado()) {
@@ -335,7 +323,7 @@ public class FaturacaoPanel extends BasePanel {
         try { fatura = faturaService.buscarPorId(id); }
         catch (Exception ex) { mostrarErro(null, ex.getMessage()); return; }
 
-        JDialog dlg = criarDialogo("Detalhe da Fatura #" + fatura.getId());
+        JDialog dlg = criarDialogo("Detalhe da Fatura — " + codigoOuFallback(fatura));
         DetalhePanel detalhe = new DetalhePanel(fatura);
         JScrollPane scroll = new JScrollPane(detalhe);
         scroll.setBorder(BorderFactory.createEmptyBorder());
@@ -343,10 +331,10 @@ public class FaturacaoPanel extends BasePanel {
         scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         dlg.setContentPane(scroll);
-        dlg.setSize(new Dimension(860, 680));
-        dlg.setMinimumSize(new Dimension(760, 560));
+        dlg.setSize(new Dimension(860, 720));
+        dlg.setMinimumSize(new Dimension(760, 580));
         dlg.setResizable(true);
-        dlg.setLocationRelativeTo(this);
+        dlg.setLocationRelativeTo(null);
         dlg.setVisible(true);
     }
 
@@ -355,7 +343,7 @@ public class FaturacaoPanel extends BasePanel {
     private void eliminarSelecionada() {
         Integer id = idSelecionado();
         if (id == null) {
-            JOptionPane.showMessageDialog(this, "Selecciona uma fatura na tabela primeiro.",
+            JOptionPane.showMessageDialog(this, "Seleciona uma fatura na tabela primeiro.",
                     "Nenhuma selecção", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -389,11 +377,14 @@ public class FaturacaoPanel extends BasePanel {
                 msg, "Erro", JOptionPane.ERROR_MESSAGE);
     }
 
+    // ── Renderer de estado ────────────────────────────────────────────────────
+
     private static class EstadoPagamentoRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
-            JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
             String estado = value != null ? value.toString() : "";
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             if (!isSelected) {
@@ -431,7 +422,6 @@ public class FaturacaoPanel extends BasePanel {
         EmitirFaturaForm(JDialog dialogo, List<Obra> obras) {
             setLayout(new BorderLayout(0, 0));
             setBorder(new EmptyBorder(24, 28, 20, 28));
-            setPreferredSize(new Dimension(460, 300));
 
             JPanel corpo = new JPanel(new GridBagLayout());
             corpo.setOpaque(false);
@@ -459,49 +449,21 @@ public class FaturacaoPanel extends BasePanel {
             areaPreview.setOpaque(false);
             areaPreview.setFont(areaPreview.getFont().deriveFont(Font.BOLD, 13f));
             areaPreview.setForeground(UIConstants.COLOR_ADMIN_ACCENT);
-            campoValor = new JTextField();
+            campoValor     = new JTextField();
             campoDescricao = new JTextField();
 
             lblErro = new JLabel(" ");
             lblErro.setForeground(UIConstants.COLOR_DANGER);
             lblErro.setFont(lblErro.getFont().deriveFont(UIConstants.FONT_SMALL));
 
-            // Actualizar preview ao mudar obra
             comboObra.addActionListener(e -> actualizarPreview());
 
             int row = 0;
 
-            JLabel lbl1 = new JLabel("Obra com orçamento aprovado *");
-            lbl1.setFont(lbl1.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.gridx = 0; c.gridwidth = 2; c.insets = new Insets(8, 0, 2, 0);
-            corpo.add(lbl1, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(comboObra, c);
-            row++;
-
-            JLabel lbl2 = new JLabel("Total calculado a partir do orçamento:");
-            lbl2.setFont(lbl2.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(12, 0, 2, 0);
-            corpo.add(lbl2, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(areaPreview, c);
-            row++;
-
-            JLabel lbl3 = new JLabel("Valor a faturar *");
-            lbl3.setFont(lbl3.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(12, 0, 2, 0);
-            corpo.add(lbl3, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(campoValor, c);
-            row++;
-
-            JLabel lbl4 = new JLabel("Descrição / parcela");
-            lbl4.setFont(lbl4.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(12, 0, 2, 0);
-            corpo.add(lbl4, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(campoDescricao, c);
-            row++;
+            addFormRow(corpo, c, row++, "Obra com orçamento aprovado *", comboObra, 8);
+            addFormRow(corpo, c, row++, "Total calculado a partir do orçamento:", areaPreview, 12);
+            addFormRow(corpo, c, row++, "Valor a faturar *", campoValor, 12);
+            addFormRow(corpo, c, row++, "Descrição / parcela", campoDescricao, 12);
 
             c.gridy = row * 2; c.insets = new Insets(4, 0, 0, 0);
             corpo.add(lblErro, c);
@@ -520,11 +482,8 @@ public class FaturacaoPanel extends BasePanel {
             btnCancelar.addActionListener(e -> dialogo.dispose());
             btnEmitir.addActionListener(e -> {
                 lblErro.setText(" ");
-                try {
-                    valorEmitir();
-                } catch (Exception ex) {
-                    lblErro.setText("Valor inválido.");
-                    return;
+                try { valorEmitir(); } catch (Exception ex) {
+                    lblErro.setText("Valor inválido."); return;
                 }
                 confirmado = true;
                 dialogo.dispose();
@@ -537,14 +496,24 @@ public class FaturacaoPanel extends BasePanel {
             actualizarPreview();
         }
 
+        private void addFormRow(JPanel corpo, GridBagConstraints c,
+                                int row, String labelText, JComponent field, int topInset) {
+            JLabel lbl = new JLabel(labelText);
+            lbl.setFont(lbl.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
+            c.gridy = row * 2; c.gridx = 0; c.gridwidth = 2; c.insets = new Insets(topInset, 0, 2, 0);
+            corpo.add(lbl, c);
+            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
+            corpo.add(field, c);
+        }
+
         private void actualizarPreview() {
             Obra obra = (Obra) comboObra.getSelectedItem();
             if (obra == null) { areaPreview.setText("—"); return; }
 
             orcamentoService.buscarAprovadoPorObra(obra).ifPresentOrElse(orc -> {
                 BigDecimal totalOrcamento = orcamentoService.calcularTotais(orc).totalComIva();
-                BigDecimal totalFaturado = faturaService.totalFaturado(obra);
-                BigDecimal saldo = faturaService.saldoPorFaturar(obra, orc);
+                BigDecimal totalFaturado  = faturaService.totalFaturado(obra);
+                BigDecimal saldo          = faturaService.saldoPorFaturar(obra, orc);
                 areaPreview.setText("Orçamento aprovado: " + euros(totalOrcamento)
                         + "\nJá faturado: " + euros(totalFaturado)
                         + "\nPor faturar nesta obra: " + euros(saldo)
@@ -557,10 +526,10 @@ public class FaturacaoPanel extends BasePanel {
             }, () -> areaPreview.setText("Sem orçamento aprovado."));
         }
 
-        boolean confirmado() { return confirmado; }
-        Obra obraEscolhida() { return (Obra) comboObra.getSelectedItem(); }
-        BigDecimal valorEmitir() { return new BigDecimal(campoValor.getText().trim().replace(",", ".")); }
-        String descricao() { return campoDescricao.getText().trim(); }
+        boolean     confirmado()   { return confirmado; }
+        Obra        obraEscolhida(){ return (Obra) comboObra.getSelectedItem(); }
+        BigDecimal  valorEmitir()  { return new BigDecimal(campoValor.getText().trim().replace(",", ".")); }
+        String      descricao()    { return campoDescricao.getText().trim(); }
     }
 
     // =========================================================================
@@ -570,12 +539,12 @@ public class FaturacaoPanel extends BasePanel {
     private class PagamentoForm extends JPanel {
 
         private boolean confirmado = false;
-        private final JTextField      campoValor;
-        private final JTextField      campoData;
+        private final JTextField        campoValor;
+        private final JTextField        campoData;
         private final JComboBox<String> comboMeioPagamento;
-        private final JTextField      campoReferencia;
-        private final JTextArea       campoObservacoes;
-        private final JLabel          lblErro;
+        private final JTextField        campoReferencia;
+        private final JTextArea         campoObservacoes;
+        private final JLabel            lblErro;
 
         PagamentoForm(JDialog dialogo, Fatura fatura, BigDecimal saldo) {
             setLayout(new BorderLayout(0, 0));
@@ -590,7 +559,7 @@ public class FaturacaoPanel extends BasePanel {
 
             campoValor = new JTextField();
             campoValor.setText(saldo.setScale(2, RoundingMode.HALF_UP).toPlainString());
-            campoData = new JTextField(LocalDate.now().format(FMT));
+            campoData  = new JTextField(LocalDate.now().format(FMT));
             campoData.putClientProperty("JTextField.placeholderText", "dd/MM/yyyy");
             comboMeioPagamento = new JComboBox<>(new String[]{
                     "Transferência Bancária", "Multibanco", "MB Way", "Numerário", "Cheque", "Outro"
@@ -604,15 +573,12 @@ public class FaturacaoPanel extends BasePanel {
                     BorderFactory.createLineBorder(new Color(203, 213, 225)),
                     new EmptyBorder(8, 8, 8, 8)));
 
-            int row = 0;
-
             // Resumo da fatura
             JLabel lblInfo = new JLabel(String.format(
                     "<html>%s — %s<br>Base: <b>%s</b> &nbsp;|&nbsp; IVA: <b>%s</b> &nbsp;|&nbsp; Total: <b>%s</b><br>" +
                             "Já pago: <b>%s</b> &nbsp;|&nbsp; Saldo em dívida: <b>%s</b><br>" +
                             "Vencimento: <b>%s</b></html>",
-                    codigoOuFallback(fatura),
-                    nomeObra(fatura.getIdObra()),
+                    codigoOuFallback(fatura), nomeObra(fatura.getIdObra()),
                     euros(faturaService.valorSubtotalSemIva(fatura)),
                     euros(faturaService.valorIva(fatura)),
                     euros(fatura.getValorTotalComIva()),
@@ -626,56 +592,24 @@ public class FaturacaoPanel extends BasePanel {
                     new EmptyBorder(10, 12, 10, 12)));
             cardInfo.add(lblInfo, BorderLayout.CENTER);
 
+            int row = 0;
             c.gridy = 0; c.gridx = 0; c.gridwidth = 2; c.insets = new Insets(0, 0, 12, 0);
             corpo.add(cardInfo, c);
             row++;
 
-            JLabel lblCampo = new JLabel("Valor a registar (€) *");
-            lblCampo.setFont(lblCampo.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(4, 0, 2, 0);
-            corpo.add(lblCampo, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(campoValor, c);
-            row++;
+            addFormRow(corpo, c, row++, "Valor a registar (€) *",           campoValor,          4);
+            addFormRow(corpo, c, row++, "Data do pagamento (dd/MM/yyyy) *",  campoData,           8);
+            addFormRow(corpo, c, row++, "Meio de pagamento *",               comboMeioPagamento,  8);
+            addFormRow(corpo, c, row++, "Referência / comprovativo",         campoReferencia,     8);
+            addFormRow(corpo, c, row++, "Observações",
+                    new JScrollPane(campoObservacoes), 8);
 
-            JLabel lblData = new JLabel("Data do pagamento (dd/MM/yyyy) *");
-            lblData.setFont(lblData.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(8, 0, 2, 0);
-            corpo.add(lblData, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(campoData, c);
-            row++;
-
-            JLabel lblMeio = new JLabel("Meio de pagamento *");
-            lblMeio.setFont(lblMeio.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(8, 0, 2, 0);
-            corpo.add(lblMeio, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(comboMeioPagamento, c);
-            row++;
-
-            JLabel lblReferencia = new JLabel("Referência / comprovativo");
-            lblReferencia.setFont(lblReferencia.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(8, 0, 2, 0);
-            corpo.add(lblReferencia, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(campoReferencia, c);
-            row++;
-
-            JLabel lblObs = new JLabel("Observações");
-            lblObs.setFont(lblObs.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
-            c.gridy = row * 2; c.insets = new Insets(8, 0, 2, 0);
-            corpo.add(lblObs, c);
-            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
-            corpo.add(new JScrollPane(campoObservacoes), c);
-            row++;
-
-            // Ações rápidas de valor
+            // Ações rápidas
             JPanel acoesValor = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
             acoesValor.setOpaque(false);
-            JButton btnTotal = buildSmallButton("Total em dívida (" + euros(saldo) + ")");
+            JButton btnTotal  = buildSmallButton("Total em dívida (" + euros(saldo) + ")");
             JButton btnLimpar = buildSmallButton("Limpar");
-            btnTotal.addActionListener(e -> campoValor.setText(saldo.toPlainString()));
+            btnTotal.addActionListener(e  -> campoValor.setText(saldo.toPlainString()));
             btnLimpar.addActionListener(e -> campoValor.setText(""));
             acoesValor.add(btnTotal);
             acoesValor.add(btnLimpar);
@@ -702,15 +636,22 @@ public class FaturacaoPanel extends BasePanel {
 
             btnCancelar.addActionListener(e -> dialogo.dispose());
             btnConfirmar.addActionListener(e -> {
-                if (validar(saldo)) {
-                    confirmado = true;
-                    dialogo.dispose();
-                }
+                if (validar(saldo)) { confirmado = true; dialogo.dispose(); }
             });
 
             rodape.add(btnCancelar);
             rodape.add(btnConfirmar);
             add(rodape, BorderLayout.SOUTH);
+        }
+
+        private void addFormRow(JPanel corpo, GridBagConstraints c,
+                                int row, String labelText, JComponent field, int topInset) {
+            JLabel lbl = new JLabel(labelText);
+            lbl.setFont(lbl.getFont().deriveFont(UIConstants.FONT_FIELD_LABEL));
+            c.gridy = row * 2; c.gridx = 0; c.gridwidth = 2; c.insets = new Insets(topInset, 0, 2, 0);
+            corpo.add(lbl, c);
+            c.gridy = row * 2 + 1; c.insets = new Insets(0, 0, 4, 0);
+            corpo.add(field, c);
         }
 
         private boolean validar(BigDecimal saldo) {
@@ -726,9 +667,8 @@ public class FaturacaoPanel extends BasePanel {
                 lblErro.setText("Introduz um valor numérico válido e maior que zero.");
                 return false;
             }
-            try {
-                LocalDate.parse(campoData.getText().trim(), FMT);
-            } catch (DateTimeParseException ex) {
+            try { LocalDate.parse(campoData.getText().trim(), FMT); }
+            catch (DateTimeParseException ex) {
                 lblErro.setText("A data tem de estar no formato dd/MM/yyyy.");
                 return false;
             }
@@ -741,94 +681,218 @@ public class FaturacaoPanel extends BasePanel {
             return true;
         }
 
-        boolean confirmado() { return confirmado; }
-
-        BigDecimal valorPago() {
-            return new BigDecimal(campoValor.getText().trim().replace(",", "."));
-        }
-
-        LocalDate dataPagamento() {
-            return LocalDate.parse(campoData.getText().trim(), FMT);
-        }
-
-        String meioPagamento() {
-            return comboMeioPagamento.getSelectedItem() != null
-                    ? comboMeioPagamento.getSelectedItem().toString()
-                    : null;
-        }
-
-        String referenciaPagamento() {
-            return campoReferencia.getText().trim();
-        }
-
-        String observacoes() {
-            return campoObservacoes.getText().trim();
-        }
+        boolean    confirmado()         { return confirmado; }
+        BigDecimal valorPago()          { return new BigDecimal(campoValor.getText().trim().replace(",", ".")); }
+        LocalDate  dataPagamento()      { return LocalDate.parse(campoData.getText().trim(), FMT); }
+        String     meioPagamento()      { return comboMeioPagamento.getSelectedItem() != null ? comboMeioPagamento.getSelectedItem().toString() : null; }
+        String     referenciaPagamento(){ return campoReferencia.getText().trim(); }
+        String     observacoes()        { return campoObservacoes.getText().trim(); }
     }
 
     // =========================================================================
-    //  PAINEL DETALHE
+    //  PAINEL DETALHE — reorganizado
     // =========================================================================
 
     private class DetalhePanel extends JPanel {
 
+        // Paleta de secções
+        private static final Color COR_SECAO_BG     = new Color(248, 250, 252);
+        private static final Color COR_SECAO_BORDA  = new Color(226, 232, 240);
+        private static final Color COR_LABEL        = new Color(100, 116, 139);
+        private static final Color COR_VALOR        = new Color(15,  23,  42);
+        private static final Color COR_TITULO_TEXT  = new Color(51,  65,  85);
+
+        // Cores de estado
+        private static final Color COR_PAGO_BG      = new Color(220, 252, 231);
+        private static final Color COR_PAGO_FG      = new Color(22,  101, 52);
+        private static final Color COR_PARCIAL_BG   = new Color(254, 249, 195);
+        private static final Color COR_PARCIAL_FG   = new Color(133, 77,  14);
+        private static final Color COR_VENCIDA_BG   = new Color(254, 226, 226);
+        private static final Color COR_VENCIDA_FG   = new Color(153, 27,  27);
+        private static final Color COR_PENDENTE_BG  = new Color(255, 237, 213);
+        private static final Color COR_PENDENTE_FG  = new Color(154, 52,  18);
+
         DetalhePanel(Fatura fatura) {
-            setLayout(new BorderLayout(0, 16));
-            setBorder(new EmptyBorder(24, 28, 24, 28));
-            setPreferredSize(new Dimension(760, 560));
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setBorder(new EmptyBorder(24, 28, 28, 28));
+            setPreferredSize(new Dimension(800, 680));
 
-            // ── Cabeçalho info ────────────────────────────────────────────────
-            JPanel info = new JPanel(new GridLayout(0, 2, 8, 4));
-            info.setOpaque(false);
+            // 1. Cabeçalho do documento
+            add(buildCabecalhoDocumento(fatura));
+            add(vSpacer(16));
 
-            adicionarInfoLinha(info, "Documento", codigoOuFallback(fatura));
-            adicionarInfoLinha(info, "Fatura Nº", "#" + fatura.getId());
-            adicionarInfoLinha(info, "Parcela", String.valueOf(fatura.getNumeroParcela() != null ? fatura.getNumeroParcela() : 1));
-            adicionarInfoLinha(info, "Data emissão", fatura.getDataEmissao() != null ? fatura.getDataEmissao().format(FMT) : "—");
-            adicionarInfoLinha(info, "Vencimento", fatura.getDataVencimento() != null ? fatura.getDataVencimento().format(FMT) : "—");
-            adicionarInfoLinha(info, "Estado", faturaService.estadoApresentacao(fatura));
-            adicionarInfoLinha(info, "Cliente", textoOuTraco(fatura.getClienteNome()));
-            adicionarInfoLinha(info, "NIF", textoOuTraco(fatura.getClienteNif()));
-            adicionarInfoLinha(info, "Morada cliente", textoOuTraco(fatura.getClienteMorada()));
-            adicionarInfoLinha(info, "Obra", nomeObra(fatura.getIdObra()));
-            adicionarInfoLinha(info, "Morada obra", textoOuTraco(fatura.getObraMorada()));
-            adicionarInfoLinha(info, "Descrição", textoOuTraco(fatura.getDescricao()));
-            adicionarInfoLinha(info, "Orçamento", fatura.getIdOrcamento() != null ? "V" + fatura.getIdOrcamento().getVersao() : "—");
+            // 2. Faixa de totais financeiros
+            add(buildFaixaTotais(fatura));
+            add(vSpacer(20));
 
-            add(info, BorderLayout.NORTH);
+            // 3. Secção: Cliente + Obra em colunas lado a lado
+            add(buildSecaoClienteObra(fatura));
+            add(vSpacer(16));
 
-            add(buildCentroDetalhe(fatura), BorderLayout.CENTER);
+            // 4. Secção: Resumo fiscal (IVA)
+            add(buildSecaoResumoIva(fatura));
+            add(vSpacer(16));
 
-            // ── Totais ────────────────────────────────────────────────────────
-            JPanel totais = new JPanel(new GridLayout(0, 2, 8, 4));
-            totais.setOpaque(false);
-            totais.setBorder(new EmptyBorder(12, 0, 0, 0));
-
-            adicionarInfoLinha(totais, "Base s/IVA", euros(faturaService.valorSubtotalSemIva(fatura)));
-            adicionarInfoLinha(totais, "IVA", euros(faturaService.valorIva(fatura)));
-            adicionarInfoLinha(totais, "Total c/IVA", euros(fatura.getValorTotalComIva()));
-            adicionarInfoLinha(totais, "Valor pago", euros(fatura.getValorPago()));
-            adicionarInfoLinha(totais, "Saldo em dívida", euros(faturaService.saldoEmDivida(fatura)));
-            adicionarInfoLinha(totais, "Obs. pagamento", textoOuTraco(fatura.getObservacoesPagamento()));
-
-            add(totais, BorderLayout.SOUTH);
+            // 5. Secção: Histórico de pagamentos
+            add(buildSecaoPagamentos(fatura));
+            add(vSpacer(4));
         }
 
-        private JComponent buildCentroDetalhe(Fatura fatura) {
-            JPanel content = new JPanel();
-            content.setOpaque(false);
-            content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        // ── 1. Cabeçalho ──────────────────────────────────────────────────────
 
-            content.add(secaoTitulo("Resumo fiscal"));
-            content.add(buildResumoIva(fatura));
-            content.add(Box.createVerticalStrut(14));
-            content.add(secaoTitulo("Pagamentos"));
-            content.add(buildPagamentos(fatura));
-            return content;
+        private JPanel buildCabecalhoDocumento(Fatura fatura) {
+            JPanel p = new JPanel(new BorderLayout(16, 0));
+            p.setOpaque(false);
+            p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+            p.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Esquerda: código + número interno
+            JPanel esq = new JPanel();
+            esq.setOpaque(false);
+            esq.setLayout(new BoxLayout(esq, BoxLayout.Y_AXIS));
+
+            JLabel lblCodigo = new JLabel(codigoOuFallback(fatura));
+            lblCodigo.setFont(lblCodigo.getFont().deriveFont(Font.BOLD, 22f));
+            lblCodigo.setForeground(COR_VALOR);
+
+            String parcelaStr = "Parcela " + (fatura.getNumeroParcela() != null ? fatura.getNumeroParcela() : 1);
+            String dataStr    = fatura.getDataEmissao() != null
+                    ? "Emitida em " + fatura.getDataEmissao().format(FMT) : "";
+            String orcStr     = fatura.getIdOrcamento() != null
+                    ? " · Orçamento V" + fatura.getIdOrcamento().getVersao() : "";
+            JLabel lblMeta = new JLabel(parcelaStr + " · " + dataStr + orcStr);
+            lblMeta.setFont(lblMeta.getFont().deriveFont(13f));
+            lblMeta.setForeground(COR_LABEL);
+
+            esq.add(lblCodigo);
+            esq.add(Box.createVerticalStrut(4));
+            esq.add(lblMeta);
+
+            // Direita: badge de estado
+            String estado = faturaService.estadoApresentacao(fatura);
+            JLabel lblEstado = new JLabel(estado);
+            lblEstado.setFont(lblEstado.getFont().deriveFont(Font.BOLD, 13f));
+            lblEstado.setOpaque(true);
+            lblEstado.setBorder(new EmptyBorder(6, 14, 6, 14));
+            lblEstado.setHorizontalAlignment(SwingConstants.CENTER);
+            aplicarCoresEstado(lblEstado, estado);
+
+            JPanel dir = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            dir.setOpaque(false);
+            dir.add(lblEstado);
+
+            p.add(esq, BorderLayout.CENTER);
+            p.add(dir, BorderLayout.EAST);
+
+            // Separador inferior
+            JPanel wrapper = new JPanel(new BorderLayout());
+            wrapper.setOpaque(false);
+            wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+            wrapper.add(p, BorderLayout.CENTER);
+            wrapper.add(new JSeparator(), BorderLayout.SOUTH);
+            ((JSeparator) wrapper.getComponent(1)).setForeground(COR_SECAO_BORDA);
+            return wrapper;
         }
 
-        private JComponent buildResumoIva(Fatura fatura) {
-            DefaultTableModel modeloResumo = new DefaultTableModel(new String[]{"Taxa IVA", "Base", "IVA", "Total"}, 0) {
+        // ── 2. Faixa de totais ─────────────────────────────────────────────────
+
+        private JPanel buildFaixaTotais(Fatura fatura) {
+            BigDecimal base   = faturaService.valorSubtotalSemIva(fatura);
+            BigDecimal iva    = faturaService.valorIva(fatura);
+            BigDecimal total  = fatura.getValorTotalComIva();
+            BigDecimal pago   = fatura.getValorPago();
+            BigDecimal saldo  = faturaService.saldoEmDivida(fatura);
+
+            JPanel faixa = new JPanel(new GridLayout(1, 5, 1, 0));
+            faixa.setAlignmentX(Component.LEFT_ALIGNMENT);
+            faixa.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+
+            faixa.add(buildCartaoValor("Base s/IVA",    euros(base),  false));
+            faixa.add(buildCartaoValor("IVA",           euros(iva),   false));
+            faixa.add(buildCartaoValor("Total c/IVA",   euros(total), true));
+            faixa.add(buildCartaoValor("Valor Pago",    euros(pago),  false));
+            faixa.add(buildCartaoSaldo("Saldo em Dívida", saldo));
+
+            return faixa;
+        }
+
+        private JPanel buildCartaoValor(String titulo, String valor, boolean destaque) {
+            JPanel card = new JPanel(new BorderLayout(0, 4));
+            card.setBackground(destaque ? new Color(239, 246, 255) : COR_SECAO_BG);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(destaque ? new Color(147, 197, 253) : COR_SECAO_BORDA),
+                    new EmptyBorder(10, 14, 10, 14)));
+
+            JLabel lblT = new JLabel(titulo);
+            lblT.setFont(lblT.getFont().deriveFont(11f));
+            lblT.setForeground(COR_LABEL);
+
+            JLabel lblV = new JLabel(valor);
+            lblV.setFont(lblV.getFont().deriveFont(Font.BOLD, destaque ? 15f : 14f));
+            lblV.setForeground(destaque ? new Color(29, 78, 216) : COR_VALOR);
+
+            card.add(lblT, BorderLayout.NORTH);
+            card.add(lblV, BorderLayout.CENTER);
+            return card;
+        }
+
+        private JPanel buildCartaoSaldo(String titulo, BigDecimal saldo) {
+            boolean pago = saldo != null && saldo.compareTo(BigDecimal.ZERO) <= 0;
+            JPanel card = new JPanel(new BorderLayout(0, 4));
+            card.setBackground(pago ? new Color(220, 252, 231) : new Color(254, 226, 226));
+            card.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(pago ? new Color(134, 239, 172) : new Color(252, 165, 165)),
+                    new EmptyBorder(10, 14, 10, 14)));
+
+            JLabel lblT = new JLabel(titulo);
+            lblT.setFont(lblT.getFont().deriveFont(11f));
+            lblT.setForeground(pago ? new Color(22, 101, 52) : new Color(153, 27, 27));
+
+            JLabel lblV = new JLabel(euros(saldo));
+            lblV.setFont(lblV.getFont().deriveFont(Font.BOLD, 15f));
+            lblV.setForeground(pago ? new Color(22, 101, 52) : new Color(153, 27, 27));
+
+            card.add(lblT, BorderLayout.NORTH);
+            card.add(lblV, BorderLayout.CENTER);
+            return card;
+        }
+
+        // ── 3. Secção Cliente + Obra ───────────────────────────────────────────
+
+        private JPanel buildSecaoClienteObra(Fatura fatura) {
+            JPanel p = new JPanel(new GridLayout(1, 2, 12, 0));
+            p.setOpaque(false);
+            p.setAlignmentX(Component.LEFT_ALIGNMENT);
+            p.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            // Bloco cliente
+            JPanel blocoCliente = buildBloco("Cliente");
+            addBlocoLinha(blocoCliente, "Nome",    textoOuTraco(fatura.getClienteNome()));
+            addBlocoLinha(blocoCliente, "NIF",     textoOuTraco(fatura.getClienteNif()));
+            addBlocoLinha(blocoCliente, "Morada",  textoOuTraco(fatura.getClienteMorada()));
+
+            // Bloco obra
+            JPanel blocoObra = buildBloco("Obra");
+            addBlocoLinha(blocoObra, "Descrição", nomeObra(fatura.getIdObra()));
+            addBlocoLinha(blocoObra, "Morada",    textoOuTraco(fatura.getObraMorada()));
+            addBlocoLinha(blocoObra, "Descrição fatura", textoOuTraco(fatura.getDescricao()));
+
+            p.add(blocoCliente);
+            p.add(blocoObra);
+            return p;
+        }
+
+        // ── 4. Resumo IVA ──────────────────────────────────────────────────────
+
+        private JPanel buildSecaoResumoIva(Fatura fatura) {
+            JPanel secao = new JPanel(new BorderLayout(0, 8));
+            secao.setOpaque(false);
+            secao.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            secao.add(buildTituloSecao("Resumo Fiscal"), BorderLayout.NORTH);
+
+            DefaultTableModel modeloResumo = new DefaultTableModel(
+                    new String[]{"Taxa IVA", "Base Tributável", "Valor IVA", "Total c/IVA"}, 0) {
                 @Override public boolean isCellEditable(int r, int c) { return false; }
             };
 
@@ -836,70 +900,186 @@ public class FaturacaoPanel extends BasePanel {
             if (resumoIva.isEmpty()) {
                 modeloResumo.addRow(new Object[]{"—", "—", "—", "—"});
             } else {
-                for (ResumoIva resumo : resumoIva) {
+                for (ResumoIva r : resumoIva) {
                     modeloResumo.addRow(new Object[]{
-                            resumo.taxaPercentagem().stripTrailingZeros().toPlainString() + "%",
-                            euros(resumo.baseTributavel()),
-                            euros(resumo.valorIva()),
-                            euros(resumo.totalComIva())
+                            r.taxaPercentagem().stripTrailingZeros().toPlainString() + "%",
+                            euros(r.baseTributavel()),
+                            euros(r.valorIva()),
+                            euros(r.totalComIva())
                     });
                 }
             }
 
-            JTable tabelaResumo = new JTable(modeloResumo);
-            tabelaResumo.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
-            tabelaResumo.setShowVerticalLines(false);
-            tabelaResumo.getTableHeader().setReorderingAllowed(false);
-            tabelaResumo.setFillsViewportHeight(true);
-            JScrollPane scroll = buildTablePane(tabelaResumo);
-            scroll.setPreferredSize(new Dimension(660, 160));
-            return scroll;
+            JTable t = buildTabelaDetalhe(modeloResumo);
+            ajustarAlturaTabela(t);
+
+            JScrollPane scroll = buildTablePane(t);
+            scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            secao.add(scroll, BorderLayout.CENTER);
+            return secao;
         }
 
-        private JComponent buildPagamentos(Fatura fatura) {
-            DefaultTableModel modeloPagamentos = new DefaultTableModel(
-                    new String[]{"Data", "Meio", "Referência", "Valor", "Observações"}, 0) {
+        // ── 5. Histórico de pagamentos ─────────────────────────────────────────
+
+        private JPanel buildSecaoPagamentos(Fatura fatura) {
+            JPanel secao = new JPanel(new BorderLayout(0, 8));
+            secao.setOpaque(false);
+            secao.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Cabeçalho da secção: título + info de vencimento
+            JPanel cabecalhoPag = new JPanel(new BorderLayout());
+            cabecalhoPag.setOpaque(false);
+            cabecalhoPag.add(buildTituloSecao("Histórico de Pagamentos"), BorderLayout.WEST);
+
+            if (fatura.getDataVencimento() != null) {
+                boolean vencida = fatura.getDataVencimento().isBefore(LocalDate.now());
+                String  textoVenc = (vencida ? "⚠ Vencida em " : "Vence em ")
+                        + fatura.getDataVencimento().format(FMT);
+                JLabel lblVenc = new JLabel(textoVenc);
+                lblVenc.setFont(lblVenc.getFont().deriveFont(12f));
+                lblVenc.setForeground(vencida ? new Color(153, 27, 27) : COR_LABEL);
+                JPanel wrapVenc = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 2));
+                wrapVenc.setOpaque(false);
+                wrapVenc.add(lblVenc);
+                cabecalhoPag.add(wrapVenc, BorderLayout.EAST);
+            }
+
+            if (fatura.getObservacoesPagamento() != null && !fatura.getObservacoesPagamento().isBlank()) {
+                JLabel lblObsPag = new JLabel("Obs.: " + fatura.getObservacoesPagamento().trim());
+                lblObsPag.setFont(lblObsPag.getFont().deriveFont(Font.ITALIC, 12f));
+                lblObsPag.setForeground(COR_LABEL);
+                cabecalhoPag.add(lblObsPag, BorderLayout.SOUTH);
+            }
+
+            secao.add(cabecalhoPag, BorderLayout.NORTH);
+
+            DefaultTableModel modeloPag = new DefaultTableModel(
+                    new String[]{"Data", "Meio de Pagamento", "Referência", "Valor Pago", "Observações"}, 0) {
                 @Override public boolean isCellEditable(int r, int c) { return false; }
             };
 
             List<PagamentoFatura> pagamentos = faturaService.listarPagamentos(fatura);
             if (pagamentos.isEmpty()) {
-                modeloPagamentos.addRow(new Object[]{"—", "—", "—", "—", "Sem pagamentos registados"});
+                modeloPag.addRow(new Object[]{"—", "Sem pagamentos registados", "—", "—", "—"});
             } else {
-                for (PagamentoFatura pagamento : pagamentos) {
-                    modeloPagamentos.addRow(new Object[]{
-                            pagamento.getDataPagamento() != null ? pagamento.getDataPagamento().format(FMT) : "—",
-                            textoOuTraco(pagamento.getMeioPagamento()),
-                            textoOuTraco(pagamento.getReferenciaPagamento()),
-                            euros(pagamento.getValorPago()),
-                            textoOuTraco(pagamento.getObservacoes())
+                for (PagamentoFatura pag : pagamentos) {
+                    modeloPag.addRow(new Object[]{
+                            pag.getDataPagamento() != null ? pag.getDataPagamento().format(FMT) : "—",
+                            textoOuTraco(pag.getMeioPagamento()),
+                            textoOuTraco(pag.getReferenciaPagamento()),
+                            euros(pag.getValorPago()),
+                            textoOuTraco(pag.getObservacoes())
                     });
                 }
             }
 
-            JTable tabelaPagamentos = new JTable(modeloPagamentos);
-            tabelaPagamentos.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
-            tabelaPagamentos.setShowVerticalLines(false);
-            tabelaPagamentos.getTableHeader().setReorderingAllowed(false);
-            tabelaPagamentos.setFillsViewportHeight(true);
-            JScrollPane scroll = buildTablePane(tabelaPagamentos);
-            scroll.setPreferredSize(new Dimension(660, 200));
-            return scroll;
+            JTable t = buildTabelaDetalhe(modeloPag);
+            t.getColumnModel().getColumn(0).setPreferredWidth(90);
+            t.getColumnModel().getColumn(1).setPreferredWidth(150);
+            t.getColumnModel().getColumn(2).setPreferredWidth(130);
+            t.getColumnModel().getColumn(3).setPreferredWidth(100);
+            t.getColumnModel().getColumn(4).setPreferredWidth(200);
+            ajustarAlturaTabela(t);
+
+            JScrollPane scroll = buildTablePane(t);
+            scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            secao.add(scroll, BorderLayout.CENTER);
+            return secao;
         }
 
-        private JComponent secaoTitulo(String titulo) {
-            JLabel label = new JLabel(titulo);
-            label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
-            label.setBorder(new EmptyBorder(0, 0, 6, 0));
-            return label;
+        // ── Utilitários de UI internos ─────────────────────────────────────────
+
+        /** Bloco tipo card com título e linhas label:valor */
+        private JPanel buildBloco(String titulo) {
+            JPanel card = new JPanel();
+            card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+            card.setBackground(COR_SECAO_BG);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(COR_SECAO_BORDA),
+                    new EmptyBorder(12, 14, 12, 14)));
+
+            JLabel lblTitulo = new JLabel(titulo.toUpperCase());
+            lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 10f));
+            lblTitulo.setForeground(COR_LABEL);
+            lblTitulo.setBorder(new EmptyBorder(0, 0, 8, 0));
+            lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.add(lblTitulo);
+            return card;
         }
 
-        private void adicionarInfoLinha(JPanel panel, String label, String valor) {
-            JLabel lLbl = new JLabel(label + ":");
-            lLbl.setFont(lLbl.getFont().deriveFont(Font.BOLD, UIConstants.FONT_FIELD_LABEL));
-            JLabel lVal = new JLabel(valor);
-            panel.add(lLbl);
-            panel.add(lVal);
+        private void addBlocoLinha(JPanel bloco, String label, String valor) {
+            JPanel linha = new JPanel(new BorderLayout(8, 0));
+            linha.setOpaque(false);
+            linha.setAlignmentX(Component.LEFT_ALIGNMENT);
+            linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+            linha.setBorder(new EmptyBorder(2, 0, 2, 0));
+
+            JLabel lblL = new JLabel(label);
+            lblL.setFont(lblL.getFont().deriveFont(12f));
+            lblL.setForeground(COR_LABEL);
+            lblL.setPreferredSize(new Dimension(110, 18));
+
+            JLabel lblV = new JLabel(valor);
+            lblV.setFont(lblV.getFont().deriveFont(Font.BOLD, 12f));
+            lblV.setForeground(COR_VALOR);
+
+            linha.add(lblL, BorderLayout.WEST);
+            linha.add(lblV, BorderLayout.CENTER);
+            bloco.add(linha);
+        }
+
+        /** Título de secção com linha separadora */
+        private JPanel buildTituloSecao(String titulo) {
+            JPanel p = new JPanel(new BorderLayout(8, 0));
+            p.setOpaque(false);
+            p.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+            JLabel lbl = new JLabel(titulo);
+            lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 13f));
+            lbl.setForeground(COR_TITULO_TEXT);
+
+            JSeparator sep = new JSeparator();
+            sep.setForeground(COR_SECAO_BORDA);
+
+            p.add(lbl, BorderLayout.WEST);
+            p.add(sep, BorderLayout.CENTER);
+            return p;
+        }
+
+        /** Tabela interna de detalhe com estilo consistente */
+        private JTable buildTabelaDetalhe(DefaultTableModel tableModel) {
+            JTable t = new JTable(tableModel);
+            t.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
+            t.setShowVerticalLines(false);
+            t.getTableHeader().setReorderingAllowed(false);
+            t.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            t.setFillsViewportHeight(false);
+            return t;
+        }
+
+        /** Ajusta a altura do ScrollPane para mostrar todas as linhas sem scroll */
+        private void ajustarAlturaTabela(JTable t) {
+            int altura = t.getRowCount() * t.getRowHeight()
+                    + t.getTableHeader().getPreferredSize().height;
+            t.setPreferredScrollableViewportSize(new Dimension(760, altura));
+        }
+
+        private void aplicarCoresEstado(JLabel lbl, String estado) {
+            if ("Pago".equalsIgnoreCase(estado)) {
+                lbl.setBackground(COR_PAGO_BG);    lbl.setForeground(COR_PAGO_FG);
+            } else if ("Parcial".equalsIgnoreCase(estado)) {
+                lbl.setBackground(COR_PARCIAL_BG); lbl.setForeground(COR_PARCIAL_FG);
+            } else if ("Vencida".equalsIgnoreCase(estado)) {
+                lbl.setBackground(COR_VENCIDA_BG); lbl.setForeground(COR_VENCIDA_FG);
+            } else {
+                lbl.setBackground(COR_PENDENTE_BG); lbl.setForeground(COR_PENDENTE_FG);
+            }
+        }
+
+        private Component vSpacer(int altura) {
+            return Box.createVerticalStrut(altura);
         }
     }
 }
