@@ -29,5 +29,4 @@ public class Visita {
     @Column(name = "notas_medicoes", length = Integer.MAX_VALUE)
     private String notasMedicoes;
 
-
 }

@@ -33,6 +33,9 @@ public class ObraService{
         }
         return api.put("/api/obras/" + obra.getId(), obra, Obra.class);
     }
+    public Obra atualizarEstado(Integer idObra, Integer idEstado) {
+        return api.post("/api/obras/" + idObra + "/estado/" + idEstado, null, Obra.class);
+    }
     public Obra finalizar(Integer idObra) {
         return api.post("/api/obras/" + idObra + "/finalizar", null, Obra.class);
     }

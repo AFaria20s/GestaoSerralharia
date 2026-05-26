@@ -139,7 +139,7 @@ public class ObrasPanel extends BasePanel {
 
     private JScrollPane buildTabela() {
         modeloTabela = new DefaultTableModel(
-                new String[]{"#", "Descrição / Obra", "Cliente", "Localidade", "Data Criação", "Estado"},
+                new String[]{"#", "Obra", "Cliente", "Localidade", "Data Criação", "Data Início", "Data Fim", "Estado"},
                 0) {
             public boolean isCellEditable(int r, int c) { return false; }
             public Class<?> getColumnClass(int c) { return String.class; }
@@ -162,10 +162,12 @@ public class ObrasPanel extends BasePanel {
         tabela.getColumnModel().getColumn(2).setPreferredWidth(160);  // Cliente
         tabela.getColumnModel().getColumn(3).setPreferredWidth(130);  // Localidade
         tabela.getColumnModel().getColumn(4).setPreferredWidth(110);  // Data
-        tabela.getColumnModel().getColumn(5).setPreferredWidth(110);  // Estado
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(110);  // Data Inicio
+        tabela.getColumnModel().getColumn(6).setPreferredWidth(110);  // Data Fim
+        tabela.getColumnModel().getColumn(7).setPreferredWidth(110);  // Estado
 
         // Renderer da coluna Estado (badge colorido)
-        tabela.getColumnModel().getColumn(5).setCellRenderer(new EstadoCellRenderer());
+        tabela.getColumnModel().getColumn(7).setCellRenderer(new EstadoCellRenderer());
 
         // Duplo clique → detalhe
         tabela.addMouseListener(new MouseAdapter() {
@@ -255,9 +257,11 @@ public class ObrasPanel extends BasePanel {
                     ? truncar(o.getDescricao(), 50) : "#" + o.getId();
             String cliente = o.getIdCliente()  != null ? o.getIdCliente().getNome() : "—";
             String local   = o.getLocalidade() != null ? o.getLocalidade() : "—";
-            String data    = o.getDataCriacao() != null ? o.getDataCriacao().format(FMT) : "—";
+            String dataCriacao    = o.getDataCriacao() != null ? o.getDataCriacao().format(FMT) : "—";
+            String dataInicio    = o.getDataInicio() != null ? o.getDataInicio().format(FMT) : "—";
+            String dataFim    = o.getDataFim() != null ? o.getDataFim().format(FMT) : "—";
             String estado  = o.getIdEstadoObra() != null ? o.getIdEstadoObra().getNomeEstado() : "—";
-            modeloTabela.addRow(new Object[]{o.getId(), desc, cliente, local, data, estado});
+            modeloTabela.addRow(new Object[]{o.getId(), desc, cliente, local, dataCriacao, dataInicio, dataFim, estado});
         }
 
         if (lblContador != null)
@@ -280,7 +284,7 @@ public class ObrasPanel extends BasePanel {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  DIÁLOGO — Nova Obra (RF02)
+    //  DIÁLOGO — Nova Obra
     // ─────────────────────────────────────────────────────────────────────
 
     private void abrirDialogoNovaObra() {
@@ -717,17 +721,11 @@ public class ObrasPanel extends BasePanel {
             Estadoobra novoEstado = (Estadoobra) cbEstado.getSelectedItem();
             if (novoEstado == null) return;
             try {
-                // Regra RF08: marcar concluída usa finalizar() que verifica faturas
-                if (novoEstado.getNomeEstado().equalsIgnoreCase("Concluída")) {
-                    obraService.finalizar(obra.getId());
-                } else {
-                    obra.setIdEstadoObra(novoEstado);
-                    obraService.guardar(obra);
-                }
+                obraService.atualizarEstado(obra.getId(), novoEstado.getId());
                 dlg.dispose();
                 carregar();
                 JOptionPane.showMessageDialog(this,
-                        "Estado alterado para «" + novoEstado.getNomeEstado() + "» com sucesso!",
+                        "Estado alterado para « " + novoEstado.getNomeEstado() + " » com sucesso!",
                         "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Erro ao alterar estado", JOptionPane.ERROR_MESSAGE);
@@ -806,13 +804,10 @@ public class ObrasPanel extends BasePanel {
                 LocalDateTime ldt = LocalDateTime.parse(dataStr,
                         DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
 
-                System.out.println("Passou 1");
-
                 Visita v = new Visita();
                 v.setIdObra(obra);
                 v.setDataVisita(ldt.atZone(ZoneId.systemDefault()).toInstant());
                 v.setNotasMedicoes(taNotas.getText().trim().isEmpty() ? null : taNotas.getText().trim());
-                System.out.println("Passou 2");
 
                 visitaService.guardar(v);
                 dlg.dispose();
