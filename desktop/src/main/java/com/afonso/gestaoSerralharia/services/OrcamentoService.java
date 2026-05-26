@@ -27,6 +27,7 @@ public class OrcamentoService{
     public List<Orcamento> listarTodos() {
         return api.get("/api/orcamentos", ORCAMENTO_LIST_TYPE);
     }
+
     public Orcamento buscarPorId(Integer id) {
         return api.get("/api/orcamentos/" + id, Orcamento.class);
     }

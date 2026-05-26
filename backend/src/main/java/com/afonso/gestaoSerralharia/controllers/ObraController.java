@@ -52,6 +52,11 @@ public class ObraController {
         return ResponseEntity.ok(obraService.guardar(obra));
     }
 
+    @PostMapping("/{id}/estado/{idEstado}")
+    public ResponseEntity<Obra> atualizarEstado(@PathVariable Integer id, @PathVariable Integer idEstado) {
+        return ResponseEntity.ok(obraService.atualizarEstado(id, idEstado));
+    }
+
     @PostMapping("/{id}/finalizar")
     public ResponseEntity<Obra> finalizar(@PathVariable Integer id) {
         return ResponseEntity.ok(obraService.finalizar(id));

@@ -87,7 +87,7 @@ public class TarefasAdminPanel extends BasePanel {
     }
 
     private JPanel buildHeader() {
-        JButton btnNova = buildButton("+ Nova Tarefa");
+        JButton btnNova = buildButton("Nova Tarefa");
         btnNova.setBackground(UIConstants.COLOR_ADMIN_ACCENT);
         btnNova.setForeground(Color.WHITE);
         btnNova.setOpaque(true);
@@ -788,7 +788,8 @@ public class TarefasAdminPanel extends BasePanel {
     private String prazoLabel(Tarefa tarefa) {
         if (tarefa == null || tarefa.getDataLimite() == null) return "Sem prazo";
         long dias = ChronoUnit.DAYS.between(LocalDate.now(), tarefa.getDataLimite());
-        if (dias < 0) return "Atrasada";
+        if ((dias < 0) && !tarefa.getIdEstadoTarefa().getNomeEstado().toLowerCase().contains("conc")) return "Atrasada";
+        if ((dias < 0) && tarefa.getIdEstadoTarefa().getNomeEstado().toLowerCase().contains("conc")) return "Satisfeito";
         if (dias == 0) return "Hoje";
         if (dias == 1) return "Amanhã";
         return "Faltam " + dias + " dias";
@@ -797,7 +798,7 @@ public class TarefasAdminPanel extends BasePanel {
     private String truncar(String texto, int max) {
         if (texto == null) return "—";
         if (texto.length() <= max) return texto;
-        return texto.substring(0, Math.max(0, max - 1)).trim() + "…";
+        return texto.substring(0, Math.max(0, max - 1)).trim() + "...";
     }
 
     private String safeLower(String valor) {
@@ -1096,7 +1097,7 @@ public class TarefasAdminPanel extends BasePanel {
 
         private Color colorEstadoTexto(String estado) {
             String e = safeLower(estado);
-            if (e.contains("concl")) return new Color(21, 128, 61);
+            if (e.contains("concl") || e.contains("satis")) return new Color(21, 128, 61);
             if (e.contains("exec")) return new Color(29, 78, 216);
             if (e.contains("atras")) return new Color(185, 28, 28);
             if (e.contains("pend")) return new Color(146, 64, 14);
@@ -1105,7 +1106,7 @@ public class TarefasAdminPanel extends BasePanel {
 
         private Color colorEstadoFundo(String estado) {
             String e = safeLower(estado);
-            if (e.contains("concl")) return new Color(220, 252, 231);
+            if (e.contains("concl") || e.contains("satis")) return new Color(220, 252, 231);
             if (e.contains("exec")) return new Color(219, 234, 254);
             if (e.contains("atras")) return new Color(254, 226, 226);
             if (e.contains("pend")) return new Color(255, 237, 213);
@@ -1122,6 +1123,7 @@ public class TarefasAdminPanel extends BasePanel {
             if (!isSelected) {
                 if ("Atrasada".equalsIgnoreCase(prazo)) label.setForeground(UIConstants.COLOR_DANGER);
                 else if ("Hoje".equalsIgnoreCase(prazo) || "Amanhã".equalsIgnoreCase(prazo)) label.setForeground(UIConstants.COLOR_WARNING);
+                else if ("Satisfeito".equalsIgnoreCase(prazo)) label.setForeground(UIConstants.COLOR_SUCCESS);
                 else label.setForeground(UIManager.getColor("Label.foreground"));
             }
             return label;

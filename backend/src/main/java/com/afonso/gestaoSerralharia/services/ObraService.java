@@ -59,6 +59,23 @@ public class ObraService {
         return obraRepository.save(obra);
     }
 
+    public Obra atualizarEstado(Integer idObra, Integer idEstado) {
+        Obra obra = buscarPorId(idObra);
+        Estadoobra estado = estadoobraRepository.findById(idEstado)
+                .orElseThrow(() -> new RuntimeException("Estado não encontrado: " + idEstado));
+
+        switch (idEstado) {
+            case 2 -> {if(obra.getDataInicio()==null) {obra.setDataInicio(LocalDate.now());}}
+            case 3 -> {
+                // Aproveita-se a logica de finalizar
+                return finalizar(idObra);
+            }
+        }
+
+        obra.setIdEstadoObra(estado);
+        return obraRepository.save(obra);
+    }
+
     public Obra finalizar(Integer idObra) {
         Obra obra = buscarPorId(idObra);
 
@@ -75,6 +92,9 @@ public class ObraService {
         Estadoobra estadoConcluida = estadoobraRepository.findByNomeEstadoIgnoreCase("Concluída")
                 .orElseThrow(() -> new RuntimeException("Estado 'Concluída' não encontrado na BD"));
         obra.setIdEstadoObra(estadoConcluida);
+
+        if(obra.getDataFim() == null) {obra.setDataFim(LocalDate.now());}
+
         return obraRepository.save(obra);
     }
 

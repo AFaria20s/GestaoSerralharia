@@ -259,7 +259,7 @@ public class OrcamentosPanel extends BasePanel {
             LocalDate validade = orcamentoService.calcularDataValidade(o);
             modelo.addRow(new Object[]{
                     o.getId(), nomeObra, nomeCliente,
-                    "V" + (o.getVersao() != null ? o.getVersao() : 1),
+                    (o.getVersao() != null ? o.getVersao() : 1),
                     o.getDataEmissao() != null ? o.getDataEmissao().format(FMT) : "—",
                     validade != null ? validade.format(FMT) : "—",
                     baseTributavel.setScale(2, RoundingMode.HALF_UP) + " €",

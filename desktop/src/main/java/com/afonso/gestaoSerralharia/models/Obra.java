@@ -36,6 +36,12 @@ public class Obra {
     @Column(name = "data_criacao", nullable = false)
     private LocalDate dataCriacao;
 
+    @Column(name = "data_incio", nullable = true)
+    private LocalDate dataInicio;
+
+    @Column(name = "data_fim", nullable = true)
+    private LocalDate dataFim;
+
     @Column(name = "nporta", nullable = false, length = 20)
     private String nporta;
 
