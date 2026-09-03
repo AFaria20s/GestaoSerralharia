@@ -1,145 +1,137 @@
-# GestãoSerralharia
+# Metalworking Workshop Management
 
-Aplicação para gestão operacional de uma serralharia, com backend REST em Spring Boot, cliente desktop em Java Swing e um frontend web em React/Vite.
+Application for operational management of a metalworking workshop, with a REST backend in Spring Boot, a desktop client in Java Swing, and a web frontend in React/Vite.
 
-## Estrutura do projeto
+## Project structure
 
 ```text
 GestaoSerralharia/
-├── backend/   # API REST + regras de negócio + acesso a dados (Spring Boot)
-├── desktop/   # Cliente desktop (Java Swing) que consome a API
-├── web/       # Frontend web (React + Vite)
-├── pom.xml    # Projeto Maven pai (agrega backend e desktop)
+├── backend/   # REST API + business rules + data access (Spring Boot)
+├── desktop/   # Desktop client (Java Swing) that consumes the API
+├── web/       # Web frontend (React + Vite)
+├── pom.xml    # Parent Maven project (aggregates backend and desktop)
 └── mvnw       # Maven Wrapper
 ```
 
-Notas:
-- Os módulos Maven ativos estão em `backend` e `desktop`.
-- A pasta `web` é independente do Maven e usa `npm`.
+Notes:
 
-## Tecnologias
+* The active Maven modules are in `backend` and `desktop`.
+* The `web` folder is independent of Maven and uses `npm`.
 
-- Java 21
-- Spring Boot 3.4.x
-- Maven Wrapper (`./mvnw`)
-- PostgreSQL
-- Java Swing (desktop)
-- React 19 + Vite (web)
+## Technologies
 
-## Pré-requisitos
+* Java 21
+* Spring Boot 3.4.x
+* Maven Wrapper (`./mvnw`)
+* PostgreSQL
+* Java Swing (desktop)
+* React 19 + Vite (web)
 
-Antes de executar, instala:
+## Prerequisites
 
-- JDK 21
-- PostgreSQL (com servidor ativo)
-- Node.js 20+ e npm (para a pasta `web`)
+Before running, install:
 
-## Configuração da base de dados
+* JDK 21
+* PostgreSQL (with an active server)
+* Node.js 20+ and npm (for the `web` folder)
 
-As configurações atuais estão em:
+## Database configuration
 
-- `backend/src/main/resources/application.properties`
-- `desktop/src/main/resources/application.properties`
+The current configurations are in:
 
-Valores por defeito no repositório:
+* `backend/src/main/resources/application.properties`
+* `desktop/src/main/resources/application.properties`
 
-- URL: `jdbc:postgresql://localhost:5432/gestao_serralharia`
-- Utilizador: `postgres`
-- Password: `root`
+Default values in the repository:
 
-Cria a base de dados antes de arrancar:
+* URL: `jdbc:postgresql://localhost:5432/gestao_serralharia`
+* User: `postgres`
+* Password: `root`
+
+Create the database before starting:
 
 ```sql
 CREATE DATABASE gestao_serralharia;
 ```
 
-Se necessário, altera utilizador/password no `application.properties`.
+If necessary, change the user/password in `application.properties`.
 
-## Como executar
+## How to run
 
 ### 1) Backend (API)
 
-Na raiz do projeto:
+In the project root:
 
 ```bash
 ./mvnw -pl backend spring-boot:run
 ```
 
-A API fica disponível em `http://localhost:8080`.
+The API is available at `http://localhost:8080`.
 
-### 2) Desktop (cliente Java)
+### 2) Desktop (Java client)
 
-Com o backend já a correr, noutra consola:
+With the backend already running, in another console:
 
 ```bash
 ./mvnw -pl desktop spring-boot:run
 ```
 
-O cliente desktop usa por defeito:
+The desktop client uses by default:
 
-- `desktop.api.base-url=http://localhost:8080`
+* `desktop.api.base-url=http://localhost:8080`
 
-Se a API estiver noutra porta/host, ajusta em `desktop/src/main/resources/application.properties`.
+If the API is on another port/host, adjust it in `desktop/src/main/resources/application.properties`.
 
 ### 3) Web (React + Vite)
 
-Na pasta `web`:
+In the `web` folder:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Para build de produção:
+For a production build:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Testes
+## Tests
 
-Executar testes do backend:
+Run backend tests:
 
 ```bash
 ./mvnw -pl backend test
 ```
 
-Executar testes de tudo (módulos Maven):
+Run all tests (Maven modules):
 
 ```bash
 ./mvnw test
 ```
 
-## Build do projeto
+## Project build
 
-Build Maven completo (backend + desktop):
+Full Maven build (backend + desktop):
 
 ```bash
 ./mvnw clean install
 ```
 
-## Problemas comuns
+## Common issues
 
-- Erro de ligação à base de dados:
-  - Verifica se o PostgreSQL está ativo.
-  - Confirma nome da base de dados, utilizador e password no `application.properties`.
+* Database connection error:
 
-- Desktop sem comunicar com backend:
-  - Confirma se o backend está ativo em `http://localhost:8080`.
-  - Confirma `desktop.api.base-url`.
+  * Check that PostgreSQL is active.
+  * Confirm the database name, user, and password in `application.properties`.
 
-- Porta 8080 ocupada:
-  - Fecha o processo que usa a porta ou muda `server.port` no `application.properties` do backend.
+* Desktop not communicating with backend:
 
-## Sugestão para entrega no GitHub
+  * Confirm that the backend is running at `http://localhost:8080`.
+  * Confirm `desktop.api.base-url`.
 
-No topo do repositório, mantém este `README.md` como ponto de entrada e inclui:
+* Port 8080 is occupied:
 
-- O que o projeto faz
-- Estrutura por módulos
-- Pré-requisitos
-- Passos de execução por componente
-- Problemas comuns
-
-Assim qualquer utilizador consegue clonar, configurar e arrancar sem depender de contexto externo.
+  * Close the process using the port or change `server.port` in the backend's `application.properties`.
